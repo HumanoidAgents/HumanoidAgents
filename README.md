@@ -28,15 +28,6 @@ Humanoid agents is a platform for building agents inspired by how humans think, 
 
 ## Installation
 
-**From pip**
-```
-pip install humanoidagents
-```
-
-**From source**
-
-if you're planning to make code changes
-
 ```
 git clone https://github.com/HumanoidAgents/HumanoidAgents.git
 cd HumanoidAgents
@@ -49,6 +40,7 @@ pip install -e .
 Run a simulation like this:
 
 ```
+cd humanoidagents
 python run_simulation.py --output_folder_name ../generations/big_bang_theory \
 --map_filename ../locations/big_bang_map.yaml \
 --agent_filenames ../specific_agents/sheldon_cooper.json ../specific_agents/leonard_hofstadter.json ../specific_agents/penny.json
@@ -103,6 +95,7 @@ It consists of the graph of basic needs and the graph of social relationship wit
 
 To run the dashboard, run the following
 ```
+cd humanoidagents
 python run_dashboard.py --folder <folder/containing/generation/output/from/run_simulation.py> 
 ```
 
