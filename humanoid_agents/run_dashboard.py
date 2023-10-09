@@ -266,7 +266,9 @@ if __name__ == '__main__':
         dates_of_interest = DatetimeNL.get_date_range(start_date, end_date)
         filename_list = get_filename_list_by_dates_of_interest(dates_of_interest, folder_name)
     df_agent_activity_basic_status = get_df_of_agent_activity_basic_status(filename_list).sort_values(by=['datetime'])
-    df_conversations = get_df_of_conversation(filename_list).sort_values(by=['datetime'])
+    df_conversations = get_df_of_conversation(filename_list)
+    if df_conversations.empty == False:
+        df_conversations = df_conversations.sort_values(by=['datetime'])
 
     external_scripts = []
     external_stylesheets = [dbc.themes.LUMEN]

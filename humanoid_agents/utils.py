@@ -4,12 +4,12 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 def load_json_file(filename):
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="utf-8") as f:
         data = json.load(f)
     return data
 
 def write_json_file(data, filename):
-    with open(filename, "w") as fw:
+    with open(filename, "w", encoding="utf-8") as fw:
         fw.write(json.dumps(data, indent=4))
 
 def bucket_agents_by_location(list_of_agent_statuses, agents):

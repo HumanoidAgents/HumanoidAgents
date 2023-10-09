@@ -38,8 +38,8 @@ pip install humanoidagents
 if you're planning to make code changes
 
 ```
-git clone ...
-cd humanoidagents
+git clone https://github.com/HumanoidAgents/HumanoidAgents.git
+cd HumanoidAgents
 pip install -e .
 ```
 
@@ -54,15 +54,17 @@ python run_simulation.py --output_folder_name ../generations/big_bang_theory \
 --agent_filenames ../specific_agents/sheldon_cooper.json ../specific_agents/leonard_hofstadter.json ../specific_agents/penny.json
 ```
 
+Window users: avoid using "\\" in command
+
 Prerequisites
 
-1. ```export OPENAI_API_KEY=sk-...``` to use your OpenAI Key. Please be careful not to exceed your quota since every simulated day with 2 to 3 agents cost around $5-10 and takes 45-60 minutes given the number of API calls.
+1. ```export OPENAI_API_KEY=sk-...``` to use your OpenAI Key. Please be careful not to exceed your quota since every simulated day with 2 to 3 agents cost around $5-10 and takes 45-60 minutes given the number of API calls. For **Window** users, this should be ```set OPENAI_API_KEY=sk-...```
 
 Required arguments
 
 1. ```--output_folder_name``` refers to the folder where the generated output will be stored
-2. ```--map_filename``` refers to the filename of the map used
-3. ```--agent_filenames``` refers to the list of agent specifications 
+2. ```--map_filename``` refers to the filename of the map used (see section below for list of built in maps)
+3. ```--agent_filenames``` refers to the list of agent specifications (see section below for list of built in agents)
 
 Optional arguments
 
@@ -87,7 +89,7 @@ Currently, we support three built-in settings
 3. **Lin Family** ```--map_filename ../locations/lin_family_map.yaml \
 --agent_filenames ../specific_agents/eddy_lin.json ../specific_agents/john_lin.json```
 
-To create your own setting, you can create your own map as well as your own characters. The fields you need to fill for each can be learned from looking at the examples. 
+To create your own setting, you can create your own map as well as your own specific agents. The fields you need to fill for each can be learned from looking at the examples. 
 
 One thing to know is that agents and map are not completely decoupled. For every agent_filename you specify, the name field of the agent has to be contained in the map.yaml under Agents as a key. This sets the initial location of the agent on the map. 
 
