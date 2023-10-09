@@ -1,0 +1,25 @@
+World:
+- Leonard and Sheldon's Apartment:
+  - Kitchen:
+    - Stove
+    - Coffee machine
+  - Leonard Hofstadter's bedroom
+  - Sheldon Cooper's bedroom
+  - Common room
+  - Bathroom
+- Park
+- Comic Book Store
+- The Cheesecake Factory
+- Caltech:
+  - University Cafeteria
+  - Sheldon's Office
+  - Leonard's Experimental Physics Lab
+- Bar
+- Chinese Restaurant
+- Penny's Apartment:
+  - Penny's bedroom
+  - Restroom
+Agents:
+- Penny: Penny's bedroom
+- Sheldon Cooper: Sheldon Cooper's bedroom
+- Leonard Hofstadter: Leonard Hofstadter's bedroom

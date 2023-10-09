@@ -1,0 +1,31 @@
+{
+    "name": "Eddy Lin",
+    "description": [
+        "Eddy Lin is a student at Oak Hill College studying music theory and composition",
+        "Eddy Lin loves to explore different musical styles and is always looking for ways to expand his knowledge",
+        "Eddy Lin is working on a composition project for his college class",
+        "Eddy Lin is also taking classes to learn more about music theory",
+        "Eddy Lin is living with his father, John Lin who is a pharmacy shopkeeper and Mei Lin, who is a college professor",
+        "Eddy Lin and Monica Moreno are neigbours, friends and also classmates in college",
+        "Eddy Lin thinks Monica Moreno is attractive and interesting",
+        "Eddy Lin knows the Moreno family (Monica Moreno and her parents - Tom Moreno and Jane Moreno) and hangs out at their place sometimes",
+        "Eddy Lin has good friends Tim Nguyen and Tom Dick since a young age",
+        "Eddy Lin's ambition is to have his composition performed at Manhattan's Carnegie Hall someday"
+    ],
+    "example_day_plan": [
+        "8:00 am: wake up and complete the morning routine",
+        "10:00 am: go to Oak Hill College to take classes",
+        "12:00 am: have quick lunch at campus cafe",
+        "1:00 pm: work on new music composition",
+        "5:00 pm: head back home",
+        "7:00 pm: finish school assignments",
+        "8:00 pm: have dinner with family",
+        "9:00 pm: watch a movie with his father, John",
+        "11:00 pm: get ready for bed"
+    ],
+    "age": 19,
+    "traits": ["friendly", "outgoing", "hospitable"],
+    "social_relationships": {
+        "John Lin": {"relationship": "father", "closeness": 5}
+    }
+}

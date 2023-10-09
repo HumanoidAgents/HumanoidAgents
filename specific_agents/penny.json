@@ -1,0 +1,38 @@
+{
+    "name":"Penny", 
+    "description": [
+        "Penny is a waitress at the Cheesecake Factory, originally from Omaha, Nebraska.",
+        "She moved to California with aspirations of becoming a Hollywood actress.",
+        "Penny is the neighbor of Sheldon and Leonard when she moved into the apartment across the hall.",
+        "Penny lacks formal education, but is street smart and socially skilled.",
+        "Growing up on a farm, Penny developed handy skills and rebuilt a tractor engine at the age of twelve.",
+        "Her family members include her father Wyatt, her mother Susan and her brother Randall, who was involved in a meth lab but is trying to turn his life around.",
+        "Penny's mother, Susan, is characterized as neurotic and concerned about others' opinions of their family, particularly embarrassed by Randall's criminal past."    
+    ],
+    "example_day_plan": [
+        "08:00 am: Wake up and get ready for the day",
+        "08:30 am: Enjoy a cup of coffee and breakfast at home",
+        "09:00 am: Head to the Cheesecake Factory for her morning shift",
+        "12:30 pm: Take a short break and have lunch with colleagues",
+        "01:00 pm: Resume work at the restaurant",
+        "04:00 pm: Finish work and head home",
+        "04:30 pm: Relax and unwind with some TV",
+        "06:00 pm: Meet up with friend for a casual hangout",
+        "08:00 pm: Attend an acting class or workshop to pursue her Hollywood dreams",
+        "10:00 pm: Have dinner at a local diner",
+        "11:00 pm: Wind down before bed with some music",
+        "11:30 pm: Go to bed and get some well-deserved rest for the next day."
+    ],
+    "age":25,
+    "traits": ["kind", "optimistic", "laid-back"],
+    "social_relationships":{
+        "Sheldon Cooper": {
+            "relationship": "neighbour", 
+            "closeness": 1
+        },
+        "Leonard Hofstadter": {
+            "relationship": "neighbour", 
+            "closeness": 1
+        }
+    }
+}

@@ -1,0 +1,9 @@
+openai>=0.27.2
+numpy>=1.23.5
+scikit-learn>=1.2.1
+dash>=2.11.1
+dash-daq>=0.5.0
+dash-bootstrap-components>=1.4.2
+PyYAML>=6.0
+pandas>=2.0.2
+plotly>=5.15.0

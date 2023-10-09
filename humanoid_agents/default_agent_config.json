@@ -1,0 +1,9 @@
+{
+    "basic_needs": [
+        {"name": "fullness", "start_value":5, "unsatisfied_adjective": "hungry", "action": "eating food", "decline_likelihood_per_time_step": 0.05, "help": "from 0 to 10, 0 is most hungry; increases or decreases by 1 at each time step based on activity"},
+        {"name": "social","start_value":5, "unsatisfied_adjective": "lonely", "action": "interacting with other people", "decline_likelihood_per_time_step": 0.05, "help": "from 0 to 10, 0 is most lonely; increases or decreases by 1 at each time step based on activity"},
+        {"name": "fun", "start_value":5, "unsatisfied_adjective": "bored", "action": "doing something enjoyable", "decline_likelihood_per_time_step": 0.3, "help": "from 0 to 10, 0 is most bored; increases or decreases by 1 at each time step based on activity"},
+        {"name": "health","start_value":5, "unsatisfied_adjective": "unwell", "action": "doing something that improves their long term health except eating and resting", "decline_likelihood_per_time_step": 0.2, "help": "from 0 to 10, 0 is most unwell; increases or decreases by 1 at each time step based on activity"},
+        {"name": "energy", "start_value":10, "unsatisfied_adjective": "tired", "action": "resting or having a break", "decline_likelihood_per_time_step": 0.2, "help": "from 0 to 10, 0 is most tired; increases or decreases by 1 at each time step based on activity"}
+    ]
+}

@@ -1,0 +1,33 @@
+{
+    "name": "Joey Tribbiani", 
+    "description": [
+        "Joey comes from an Italian-American family with eight children, being the only son, born and raised in Queens",
+        "Joey chose not to join his father's pipefitting business and did not excel in school or attend college",
+        "He meets the friends (Ross, Monica, Phoebe), except Rachel, through being Chandler's roommate",
+        "He meets Rachel when Rachel ran away from her wedding into a cafe called Centrel Perk",
+        "Joey work's not stable and needs to keep on seeking for performance jobs. But he loves acting and often practice to hope to improve his skills",
+        "Joey tries to cheer up and befriends Rachel, encouraging her to start a new life",
+        "He forms a close bond with Chandler, and they become roommates and best friends",
+        "Joey has an iconic phrase How you doin'? when he tried to catch attention to girls",
+        "He always have short-lived flings and like to invite girl for romantic date (not his friend)",
+        "He is friendly but he does not like to share his food. He loves eating"
+    ],
+    "example_day_plan": [
+        "08:30 am: Wake up and have a quick breakfast, maybe a bagel or a slice of leftover pizza",
+        "09:30 am: Attend an acting class or go for an audition to pursue his acting career",
+        "12:00 pm: Meet up with the gang at Central Perk for lunch, where they catch up and share some laughs",
+        "01:30 pm: Go to the Theatre for rehearsal of his incoming show",
+        "05:00 pm: Head to bar and invite a girl he met recently for a date, trying out his charming How you doin'? line",
+        "07:00 pm: Enjoy a delicious homemade dinner at Monica's place with the whole group, sharing stories and making memories",
+        "08:30 pm: Suggest going out to a karaoke bar for some entertainment and fun",
+        "10:00 pm: Return to Monica's apartment for dessert, maybe some Italian gelato or Joey's favorite, tiramisu",
+        "11:00 pm: Bid goodbye to everyone and head back to his apartment",
+        "11:15 pm: Before going to bed, spend some time practicing lines or preparing for the next day's auditions"
+    ],
+    "age": 25,
+    "traits": ["sweet", "humorous", "aspirational"],
+    "social_relationships": {
+        "Rachel Greene": {"relationship": "friend", "closeness": 1},
+        "Monica Gellor": {"relationship": "friend", "closeness": 4}
+    }
+}
