@@ -1,6 +1,6 @@
 ## What is Humanoid Agents?
 
- | [Demo](https://www.humanoidagents.com/) | [YouTube Walkthrough (2m)](https://youtu.be/vQkOf-zS2Y0)
+[Paper](https://arxiv.org/abs/2310.05418) | [Demo](https://www.humanoidagents.com/) | [YouTube Walkthrough (2m)](https://youtu.be/vQkOf-zS2Y0)
 
 Humanoid agents is a platform for building agents inspired by how humans think, talk and behave. Humanoid Agents does by complementing System 2 logical thinking with System 1 thinking based on embodied conditions such as the fulfilment of their basic needs, emotions and their relationships with others. 
 
@@ -22,6 +22,7 @@ Humanoid agents is a platform for building agents inspired by how humans think, 
 - [(Optional) Adding new basic needs](#optional-adding-new-basic-needs)
 - [(Optional/Advanced) Extending HumanoidAgent class](#optionaladvanced-extending-humanoidagent-class)
 - [Future Plans](#future-plans)
+- [Citation](#citation)
 
 
 
@@ -167,4 +168,16 @@ You don't have to modify every method (if you don't and don't want the NotImplem
 - [ ] Support other LLMs
 - [ ] Support other aspects of System 1 thinking
 
+## Citation
+
+```bibtex
+@misc{wang2023humanoid,
+      title={Humanoid Agents: Platform for Simulating Human-like Generative Agents}, 
+      author={Zhilin Wang and Yu Ying Chiu and Yu Cheung Chiu},
+      year={2023},
+      eprint={2310.05418},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
+}
+```
 
