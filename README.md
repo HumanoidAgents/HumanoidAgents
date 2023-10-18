@@ -47,11 +47,11 @@ python run_simulation.py --output_folder_name ../generations/big_bang_theory \
 --agent_filenames ../specific_agents/sheldon_cooper.json ../specific_agents/leonard_hofstadter.json ../specific_agents/penny.json
 ```
 
-Window users: avoid using "\\" in command
+Windows users: avoid using "\\" in command
 
 Prerequisites
 
-1. ```export OPENAI_API_KEY=sk-...``` to use your OpenAI Key. Please be careful not to exceed your quota since every simulated day with 2 to 3 agents cost around $5-10 and takes 45-60 minutes given the number of API calls. For **Window** users, this should be ```set OPENAI_API_KEY=sk-...```
+1. ```export OPENAI_API_KEY=sk-...``` to use your OpenAI Key. Please be careful not to exceed your quota since every simulated day with 2 to 3 agents cost around $5-10 and takes 45-60 minutes given the number of API calls. For **Windows** users, this should be ```set OPENAI_API_KEY=sk-...```
 
 Required arguments
 
