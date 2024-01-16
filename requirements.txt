@@ -7,3 +7,4 @@ dash-bootstrap-components>=1.4.2
 PyYAML>=6.0
 pandas>=2.0.2
 plotly>=5.15.0
+sentence-transformers>=2.2.2
