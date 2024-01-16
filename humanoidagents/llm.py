@@ -3,12 +3,13 @@ from openai import OpenAI
 
 from functools import cache
 
+from sentence_transformers import SentenceTransformer
 
 
 class OpenAILLM:
 
     client = OpenAI()
-    
+
     @classmethod
     def get_llm_response(cls, prompt, max_tokens=None, timeout=60):
         n_retries = 10
@@ -49,4 +50,17 @@ class OpenAILLM:
             model="text-embedding-ada-002"
         )
         embeddings = response.data[0].embedding
+        return embeddings
+
+class LocalLLM(OpenAILLM):
+    
+    client = OpenAI(base_url="http://localhost:1234/v1", api_key="not-needed")
+
+    embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+    @classmethod
+    @cache
+    def get_embeddings(cls, query):
+        response = cls.embedding_model.encode([query], convert_to_numpy=True)
+        embeddings = list(response[0])
         return embeddings

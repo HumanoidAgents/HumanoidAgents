@@ -3,15 +3,14 @@ import random
 from functools import cache
 import logging
 
-from llm import OpenAILLM
 from utils import DatetimeNL
 from generative_agent import GenerativeAgent
 
 
 class HumanoidAgent(GenerativeAgent):
 
-    def __init__(self, name: str, description: str, age: int, traits: list, example_day_plan: str, social_relationships={}, basic_needs=None, emotion=None):
-        super().__init__(name, description, age, traits, example_day_plan)
+    def __init__(self, name: str, description: str, age: int, traits: list, example_day_plan: str, social_relationships={}, basic_needs=None, emotion=None, llm=None):
+        super().__init__(name, description, age, traits, example_day_plan, llm=llm)
 
         self.allow_emotion_changes = True if emotion is None else False
 
@@ -28,13 +27,12 @@ class HumanoidAgent(GenerativeAgent):
         for basic_need in basic_needs:
             self.basic_needs[basic_need['name']] = basic_need['start_value']
         
-
         self.agent_states_nl = self.get_agent_states_nl()
 
         # this can be dynamically updated based on activities people do with each other
         self.social_relationships = social_relationships 
         self.suggested_changes = []
-    
+
     def get_agent_states_nl(self):
         agent_states = ""
         
@@ -73,7 +71,7 @@ class HumanoidAgent(GenerativeAgent):
 
         joined_memory_statements = '\n- '.join(memories1 + memories2)
         prompt = f"Summarize this: {joined_memory_statements}"
-        return OpenAILLM.get_llm_response(prompt)
+        return self.LLM.get_llm_response(prompt)
 
     @cache
     def get_agent_action_generative(self, curr_time):
@@ -87,7 +85,7 @@ class HumanoidAgent(GenerativeAgent):
         #print(memories)
         joined_memory_statements = '\n- '.join(memories)
         prompt = f"{joined_memory_statements} {query}"
-        activity = OpenAILLM.get_llm_response(prompt)
+        activity = self.LLM.get_llm_response(prompt)
         self.analyze_agent_activity(activity)
         self.add_to_memory(activity=activity, curr_time=curr_time, memory_type="action")
         return activity
@@ -113,7 +111,7 @@ class HumanoidAgent(GenerativeAgent):
         plan = None
         attempts = 0
         while not GenerativeAgent.check_plan_format(plan) and attempts < max_attempts:
-            plan = OpenAILLM.get_llm_response(prompt)
+            plan = self.LLM.get_llm_response(prompt)
             plan = plan.split('\n')
             plan = '\n'.join([plan_item for plan_item in plan if plan_item.strip()])
 
@@ -143,7 +141,7 @@ class HumanoidAgent(GenerativeAgent):
             Feelings: {agent_states_nl}
             Should {self.name} change their original plan? Please respond with either yes or no. If yes, please also then suggest a specific change in 1 sentence.
             """
-            reaction_raw = OpenAILLM.get_llm_response(prompt)
+            reaction_raw = self.LLM.get_llm_response(prompt)
             suggested_change = GenerativeAgent.parse_reaction_response(reaction_raw)
             self.suggested_changes.append((suggested_change, curr_time))
 
@@ -172,7 +170,7 @@ class HumanoidAgent(GenerativeAgent):
 
         emotion_prompt = f"In the following activity '{activity}', what emotion is expressed? Please reply in one word from this list {possible_emotions} only."
 
-        emotion =  OpenAILLM.get_llm_response(emotion_prompt, max_tokens=4)
+        emotion =  self.LLM.get_llm_response(emotion_prompt, max_tokens=4)
 
         return HumanoidAgent.identify_in_list_else_first_option(emotion, possible_emotions)
 
@@ -190,7 +188,7 @@ class HumanoidAgent(GenerativeAgent):
 
             
             prompt = f"In normal settings, does the activity '{activity}' involve {action}? Please respond with either yes or no."
-            response = OpenAILLM.get_llm_response(prompt, max_tokens=2)
+            response = self.LLM.get_llm_response(prompt, max_tokens=2)
             
             if 'yes' in response.lower():
                 self.__dict__["basic_needs"][attr] += 1
@@ -207,7 +205,7 @@ class HumanoidAgent(GenerativeAgent):
 
     def get_sentiment_about_conversation(self, linearized_conversation_history, other_agent):
         prompt = f"Given this conversation ```{linearized_conversation_history}''' Did {self.name} enjoy the conversation? Please respond with either yes or no."
-        response = OpenAILLM.get_llm_response(prompt, max_tokens=3)
+        response = self.LLM.get_llm_response(prompt, max_tokens=3)
         self.social_relationships[other_agent.name]['closeness'] += 1 if 'yes' in response.lower() else -1
 
         if self.allow_emotion_changes:
@@ -267,7 +265,7 @@ class HumanoidAgent(GenerativeAgent):
     
     def get_status_json(self, curr_time, world_location):
         activity = self.get_agent_action_retrieval_based(curr_time)
-        activity_emoji = GenerativeAgent.convert_to_emoji(activity)
+        activity_emoji = self.convert_to_emoji(activity)
         location = self.get_agent_location(activity, curr_time, world_location)
         most_recent_15m_plan = [memory_item for memory_item in self.memory if memory_item['memory_type'] == '15 minutes plan'][-1]['activity']
 
@@ -331,7 +329,7 @@ class HumanoidAgent(GenerativeAgent):
         What would he say next to {other_agent.name}?
         {self.name}:"""
 
-        return OpenAILLM.get_llm_response(prompt)
+        return self.LLM.get_llm_response(prompt)
 
     def get_closeness_between_self_and_other_agent(self, other_agent):
         # note this value is not symmetrical 
@@ -372,7 +370,7 @@ class HumanoidAgent(GenerativeAgent):
         {summary_of_relevant_context}
         Should {self.name} react to the observation? Please respond with either yes or no. If yes, please also then suggest an appropriate reaction in 1 sentence.
         """
-        reaction_raw = OpenAILLM.get_llm_response(prompt)
+        reaction_raw = self.LLM.get_llm_response(prompt)
         reaction_processed = GenerativeAgent.parse_reaction_response(reaction_raw)
         return reaction_processed
 
@@ -403,7 +401,7 @@ class HumanoidAgent(GenerativeAgent):
         # print(prompt)
         # raise ValueError("Using Humanoid Agent.get_agent_reaction_about_another_agent")
 
-        reaction_raw = OpenAILLM.get_llm_response(prompt)
+        reaction_raw = self.LLM.get_llm_response(prompt)
         # print(f"Raw reaction response by {self.name}:",reaction_raw)
         reaction_processed = GenerativeAgent.parse_reaction_response(reaction_raw)
         #based on the paper, need to re-plan with every reaction but don't think super helpful here

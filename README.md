@@ -51,7 +51,7 @@ Windows users: avoid using "\\" in command
 
 Prerequisites
 
-1. ```export OPENAI_API_KEY=sk-...``` to use your OpenAI Key. Please be careful not to exceed your quota since every simulated day with 2 to 3 agents cost around $5-10 and takes 45-60 minutes given the number of API calls. For **Windows** users, this should be ```set OPENAI_API_KEY=sk-...```
+1. ```export OPENAI_API_KEY=sk-...``` to use your OpenAI Key (only if you would like to use OpenAI LLM; otherwise please select ```--llm local``` to run local inferencing models instead). Please be careful not to exceed your quota since every simulated day with 2 to 3 agents cost around $2-5 and takes 45-60 minutes given the number of API calls. For **Windows** users, this should be ```set OPENAI_API_KEY=sk-...```
 
 Required arguments
 
@@ -68,6 +68,8 @@ Optional arguments
 3. ```--end_date``` refers to the (inclusive) end date  of the interested date range. The format is YYYY-MM-DD e.g. 2023-01-04
    
 4. ```--condition``` as noted in the paper, we can adjust the starting condition of all agents (in terms of their basic needs, emotion and closeness to others). You can use this to specify a condition (e.g. health) for all agents to be 0. See the list of accepted arguments on argparse
+
+5. (NEW) ```--llm```  refers to the Large Language Model you would to use. Choose between ```openai``` for ChatGPT-3.5-turbo for LLM and Ada-v2 for embedding respectively and ```local``` (default) for a locally hosted LLM (such as Mistral 7B, Mixtral or any LlaMA models) and a local embedding model (such as sentence-transformers/all-MiniLM-L6-v2). Please note that the openai option charges to yout OpenAI account. For ```local```, you would also need to start a OpenAI-compatible server. There are many ways to do this but we recommend [LM Studio](https://lmstudio.ai/), a no-code solution equipped with a GUI, as a first attempt to do this.
 
 ## Customizing locations and specific agents
 

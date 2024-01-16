@@ -6,11 +6,11 @@ import logging
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from utils import DatetimeNL
-from llm import OpenAILLM
+from llm import OpenAILLM, LocalLLM
 
 class GenerativeAgent:
 
-    def __init__(self, name: str, description: str, age: int, traits: list, example_day_plan: str):
+    def __init__(self, name: str, description: str, age: int, traits: list, example_day_plan: str, llm: str='openai'):
         self.name = name
         self.description = description
         self.age = age
@@ -32,6 +32,8 @@ class GenerativeAgent:
             )
         
         self.add_to_memory(activity=self.example_day_plan, curr_time=global_start_date, memory_type="day_plan")
+
+        self.LLM = OpenAILLM if llm == "openai" else LocalLLM
 
     @cache
     def plan(self, curr_time, condition=None):
@@ -86,18 +88,18 @@ class GenerativeAgent:
         condition_formatted = f'\nCondition: {condition}\n' if condition is not None else ''
 
         prompt = f"""
-        Please plan a day for {self.name} ending latest by 11:45 pm.
+Please plan a day for {self.name} ending latest by 11:45 pm.
 
-        Format:
-        hh:mm am/pm: <activity>
+Format:
+hh:mm am/pm: <activity>
 
-        Name: {self.name} (age: {self.age})
-        Innate traits: {', '.join(self.traits)}
-        Description: {self.description}{condition_formatted}
-        On {last_plan_time_nl}, 
-        {last_plan_activity}
-        On {date},
-        """
+Name: {self.name} (age: {self.age})
+Innate traits: {', '.join(self.traits)}
+Description: {self.description}{condition_formatted}
+On {last_plan_time_nl}, 
+{last_plan_activity}
+On {date},
+"""
 
         #for re-planning from a certain time (e.g. 4:00 pm) onwards
         if DatetimeNL.get_time_nl(curr_time) != "12:00 am":
@@ -108,7 +110,7 @@ class GenerativeAgent:
         
         attempts = 0
         while not GenerativeAgent.check_plan_format(resulting_plan) and attempts < max_attempts:
-            resulting_plan = OpenAILLM.get_llm_response(prompt)
+            resulting_plan = self.LLM.get_llm_response(prompt)
             if DatetimeNL.get_time_nl(curr_time) != "12:00 am":
                 resulting_plan = f"{DatetimeNL.get_time_nl(curr_time)}:" + resulting_plan
             resulting_plan = resulting_plan.split('\n')
@@ -140,49 +142,49 @@ class GenerativeAgent:
 
         # note we can even plan entire weeks or months or years with this recusive strategy
         prompt = f"""
-        Please decompose the plan into items at intervals of {time_interval}, ending the day latest by 11:45 pm.
-        Format: hh:mm am/pm: <activity>
+Please decompose the plan into items at intervals of {time_interval}, ending the day latest by 11:45 pm.
+Format: hh:mm am/pm: <activity>
 
-        Plan: 
-        6:00 am: woke up and completed the morning routine
-        7:00 am: finished breakfast
-        8:00 am: opened up The Willows Market and Pharmacy
-        8:30 am: greeted the regular customers and helped them with their medication needs
-        12:00 pm: had lunch
-        1:00 pm: continued working and assisting customers
-        7:00 pm: closed up the shop and went home 
-        8:00 pm: have dinner with his family
-        9:00 pm: watched a movie with his son, Eddy
-        10:00 pm: get ready for bed and slept
+Plan: 
+6:00 am: woke up and completed the morning routine
+7:00 am: finished breakfast
+8:00 am: opened up The Willows Market and Pharmacy
+8:30 am: greeted the regular customers and helped them with their medication needs
+12:00 pm: had lunch
+1:00 pm: continued working and assisting customers
+7:00 pm: closed up the shop and went home 
+8:00 pm: have dinner with his family
+9:00 pm: watched a movie with his son, Eddy
+10:00 pm: get ready for bed and slept
 
-        Plan in intervals of 1 hour: 
-        6:00 am: woke up and completed the morning routine 
-        7:00 am: finished breakfast 
-        8:00 am: opened up The Willows Market and Pharmacy 
-        9:00 am: greeted the regular customers 
-        10:00 am: helped regular customers with their medication needs 
-        11:00 am: greeted more customers 
-        12:00 pm: had lunch 
-        1:00 pm: restocked medication 
-        2:00 pm: checked computers on medications he should order
-        3:00 pm: checked shelves to see whether popular medications are still in stock
-        4:00 pm: helped with prescription of customers
-        5:00 pm: helped with prescription of customers
-        6:00 pm: helped customers with questions about side effects of medication
-        7:00 pm: closed shop and went home
-        8:00 pm: had dinner with family
-        9:00 pm: watched a movie with his son, Eddy
-        10:00 pm: got ready for bed and slept
+Plan in intervals of 1 hour: 
+6:00 am: woke up and completed the morning routine 
+7:00 am: finished breakfast 
+8:00 am: opened up The Willows Market and Pharmacy 
+9:00 am: greeted the regular customers 
+10:00 am: helped regular customers with their medication needs 
+11:00 am: greeted more customers 
+12:00 pm: had lunch 
+1:00 pm: restocked medication 
+2:00 pm: checked computers on medications he should order
+3:00 pm: checked shelves to see whether popular medications are still in stock
+4:00 pm: helped with prescription of customers
+5:00 pm: helped with prescription of customers
+6:00 pm: helped customers with questions about side effects of medication
+7:00 pm: closed shop and went home
+8:00 pm: had dinner with family
+9:00 pm: watched a movie with his son, Eddy
+10:00 pm: got ready for bed and slept
 
-        Plan: 
-        {plan}
-        Plan in intervals of {time_interval}:
-        """
+Plan: 
+{plan}
+Plan in intervals of {time_interval}:
+"""
         
         resulting_plan = None
         attempts = 0
         while not GenerativeAgent.check_plan_format(resulting_plan) and attempts < max_attempts:
-            resulting_plan = OpenAILLM.get_llm_response(prompt)
+            resulting_plan = self.LLM.get_llm_response(prompt)
             if DatetimeNL.get_time_nl(curr_time) != "12:00 am":
                 resulting_plan = f"{DatetimeNL.get_time_nl(curr_time)}:" + resulting_plan
             resulting_plan = resulting_plan.split('\n')
@@ -201,9 +203,9 @@ class GenerativeAgent:
     
 
     def get_relevance_scores(self, query):
-        query_embedding = OpenAILLM.get_embeddings(query)
+        query_embedding = self.LLM.get_embeddings(query)
         logging.info(json.dumps([memory_item["activity"] for memory_item in self.memory], indent=4))
-        memory_item_embeddings = [OpenAILLM.get_embeddings(memory_item["activity"]) for memory_item in self.memory]
+        memory_item_embeddings = [self.LLM.get_embeddings(memory_item["activity"]) for memory_item in self.memory]
         scores = cosine_similarity([query_embedding], memory_item_embeddings)[0]
         return scores
 
@@ -249,7 +251,7 @@ class GenerativeAgent:
     def get_questions_for_reflection(self):
         prompt = ", ".join([memory_item["activity"] for memory_item in self.memory[-100:]])
         prompt += "Given only the information above, what are 3 most salient high-level questions we can answer about the subjects in the statements?"
-        questions = OpenAILLM.get_llm_response(prompt, max_tokens=100)
+        questions = self.LLM.get_llm_response(prompt, max_tokens=100)
         question_list = [question + "?" for question in questions.split("?")]
         return question_list
     
@@ -262,7 +264,7 @@ class GenerativeAgent:
             for i, memory in enumerate(memories):
                 prompt += f"{i}. {memory}\n"
             prompt += "What 5 high-level insights can you infer from the above statements? (example format: insight (because of 1, 5, 3))"
-            insights = OpenAILLM.get_llm_response(prompt)
+            insights = self.LLM.get_llm_response(prompt)
             # remove the 1. 2. or 3. 
             insights_list = [' '.join(insight.strip().split(' ')[1:]) for insight in insights.split(")")][:5]
             for insight in insights_list:
@@ -290,14 +292,14 @@ class GenerativeAgent:
         following piece of memory.
         Memory: {memory_statement}
         Rating:'''
-        return int(OpenAILLM.get_llm_response(prompt, max_tokens=1))
+        return int(self.LLM.get_llm_response(prompt, max_tokens=1))
 
     def get_agent_information(self, aspect="core characteristics", curr_time=None):
         memory_query = f"{self.name}'s {aspect}"
         memory_statements = self.retrieve_memories(memory_query, curr_time)
         joined_memory_statements = '\n- '.join(memory_statements)
         prompt = f"""How would one describe {memory_query} given the following statements?\n- {joined_memory_statements}"""
-        return OpenAILLM.get_llm_response(prompt)
+        return self.LLM.get_llm_response(prompt)
 
 
     @cache
@@ -324,10 +326,9 @@ class GenerativeAgent:
         """
         return description
 
-    @staticmethod
-    def convert_to_emoji(activity):
+    def convert_to_emoji(self, activity):
         prompt = f"Please represent ```{activity}''' using 2 emoji characters"
-        return OpenAILLM.get_llm_response(prompt, max_tokens=8)
+        return self.LLM.get_llm_response(prompt, max_tokens=8)
 
     def get_curr_location_nodes(self, location):
         location_nodes = []
@@ -369,7 +370,7 @@ class GenerativeAgent:
             Choose from one of the options below only:
             {options}
             """
-            generated_area_part = OpenAILLM.get_llm_response(prompt)
+            generated_area_part = self.LLM.get_llm_response(prompt)
             matched_area_part = GenerativeAgent.fuzzy_match(generated_area_part, options.split(', '))
             attempts += 1
             # print("Prompt: ", prompt)
@@ -399,7 +400,7 @@ class GenerativeAgent:
     #     generated_location = None
     #     while generated_location is None:
     #         prompt = f"Where is ```{activity}''' taking place? Choose only within this list {ALLOWED_LOCATIONS}"
-    #         generated_location = OpenAILLM.get_llm_response(prompt)
+    #         generated_location = self.LLM.get_llm_response(prompt)
     #         generated_location = GenerativeAgent.fuzzy_match(generated_location, ALLOWED_LOCATIONS)
     #     return generated_location
 
@@ -426,7 +427,7 @@ class GenerativeAgent:
         memories = self.retrieve_memories(query, curr_time, top_n=5)
         joined_memory_statements = '\n- '.join(memories)
         prompt = f"{joined_memory_statements} {query}"
-        activity = OpenAILLM.get_llm_response(prompt)
+        activity = self.LLM.get_llm_response(prompt)
         self.add_to_memory(activity=activity, curr_time=curr_time, memory_type="action")
         return activity
 
@@ -510,7 +511,7 @@ class GenerativeAgent:
         memories2 = other_agent.retrieve_memories(prompt2, curr_time, top_n=5)
         joined_memory_statements = '\n- '.join(memories1 + memories2)
         prompt = f"Summarize this: {joined_memory_statements}"
-        return OpenAILLM.get_llm_response(prompt)
+        return self.LLM.get_llm_response(prompt)
 
     @staticmethod
     def parse_reaction_response(response):
@@ -543,7 +544,7 @@ class GenerativeAgent:
         {summary_of_relevant_context}
         Should {self.name} react to the observation? Please respond with either yes or no. If yes, please also then suggest an appropriate reaction in 1 sentence.
         """
-        reaction_raw = OpenAILLM.get_llm_response(prompt)
+        reaction_raw = self.LLM.get_llm_response(prompt)
         # print(f"Raw reaction response by {self.name}:",reaction_raw)
         reaction_processed = GenerativeAgent.parse_reaction_response(reaction_raw)
         #based on the paper, need to re-plan with every reaction but don't think super helpful here
@@ -588,7 +589,7 @@ class GenerativeAgent:
         {background}
         What would {self.name} say next to {other_agent.name}?
         {self.name}:"""
-        return OpenAILLM.get_llm_response(prompt)
+        return self.LLM.get_llm_response(prompt)
 
     def dialogue(self, other_agent, curr_time, max_turns=10):
         
@@ -632,7 +633,7 @@ class GenerativeAgent:
 
     def get_status_json(self, curr_time, world_location):
         activity = self.get_agent_action_retrieval_only(curr_time)
-        activity_emoji = GenerativeAgent.convert_to_emoji(activity)
+        activity_emoji = self.convert_to_emoji(activity)
         location = self.get_agent_location(activity, curr_time, world_location)
         most_recent_15m_plan = [memory_item for memory_item in self.memory if memory_item['memory_type'] == '15 minutes plan'][-1]['activity']
         status = {

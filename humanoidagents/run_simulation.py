@@ -24,6 +24,7 @@ parser.add_argument('-e', '--end_date', help='Enter end date (inclusive) by YYYY
 parser.add_argument("-c", "--condition", default=None, choices=["disgusted", "afraid", "sad", "surprised", "happy", "angry", "neutral", 
                                             "fullness", "social", "fun", "health", "energy", 
                                             "closeness_0", "closeness_5", "closeness_10", "closeness_15", None])
+parser.add_argument("-l", "--llm", default="local", choices=["openai", "local"])
 
 
 args = parser.parse_args()
@@ -37,6 +38,7 @@ condition = args.condition
 start_date = args.start_date
 end_date = args.end_date
 default_agent_config_filename = args.default_agent_config_filename
+llm = args.llm
 
 
 ## location
@@ -52,6 +54,7 @@ for agent_filename in agent_filenames:
     #inplace dict update
     agent_kwargs.update(default_agent_kwargs)
     agent_kwargs = override_agent_kwargs_with_condition(agent_kwargs, condition)
+    agent_kwargs["llm"] = llm
     agent = HumanoidAgent(**agent_kwargs)
     agents.append(agent)
     
