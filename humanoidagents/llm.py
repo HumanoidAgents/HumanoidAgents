@@ -1,6 +1,7 @@
 import openai
 from openai import OpenAI
 
+import time
 from functools import cache
 
 from sentence_transformers import SentenceTransformer
@@ -11,14 +12,11 @@ class OpenAILLM:
     client = OpenAI()
 
     @classmethod
-    def get_llm_response(cls, prompt, max_tokens=None, timeout=60):
+    def get_llm_response(cls, prompt, max_tokens=1024, timeout=60):
         n_retries = 10
         for i in range(n_retries):
             try:
-                if isinstance(max_tokens, int):
-                    chat_completion = cls.client.chat.completions.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}], max_tokens=max_tokens, timeout=timeout)
-                else:
-                    chat_completion = cls.client.chat.completions.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}], timeout=timeout)
+                chat_completion = cls.client.chat.completions.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}], max_tokens=max_tokens, timeout=timeout)
                 return chat_completion.choices[0].message.content
             except openai.APIError:
                 print("openai.error.ServiceUnavailableError")
@@ -61,6 +59,6 @@ class LocalLLM(OpenAILLM):
     @classmethod
     @cache
     def get_embeddings(cls, query):
-        response = cls.embedding_model.encode([query], convert_to_numpy=True)
+        response = cls.embedding_model.encode([query], convert_to_numpy=True, show_progress_bar=False)
         embeddings = list(response[0])
         return embeddings

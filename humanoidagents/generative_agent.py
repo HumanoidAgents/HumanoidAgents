@@ -1,12 +1,13 @@
 import json
+import logging
 from datetime import datetime
 from functools import cache
-import logging
 
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from utils import DatetimeNL
-from llm import OpenAILLM, LocalLLM
+
+from humanoidagents.llm import OpenAILLM, LocalLLM
+from humanoidagents.utils import DatetimeNL
 
 class GenerativeAgent:
 
@@ -40,12 +41,12 @@ class GenerativeAgent:
         plan = self.initial_plan(curr_time, condition=condition)
         logging.info("day_plan")
         logging.info(plan)
-        hourly_plan = self.recursively_decompose_plan(plan, curr_time=curr_time , time_interval="1 hour")
-        logging.info("hourly_plan")
-        logging.info(hourly_plan)
-        minute_15_plan_based_on_hourly = self.recursively_decompose_plan(hourly_plan, curr_time=curr_time, time_interval="15 minutes")
-        logging.info("minute_15_plan_based_on_hourly")
-        logging.info(minute_15_plan_based_on_hourly)
+        # hourly_plan = self.recursively_decompose_plan(plan, curr_time=curr_time , time_interval="1 hour")
+        # logging.info("hourly_plan")
+        # logging.info(hourly_plan)
+        # minute_15_plan_based_on_hourly = self.recursively_decompose_plan(hourly_plan, curr_time=curr_time, time_interval="15 minutes")
+        # logging.info("minute_15_plan_based_on_hourly")
+        # logging.info(minute_15_plan_based_on_hourly)
 
     @staticmethod
     def check_plan_format(plan):
@@ -57,22 +58,69 @@ class GenerativeAgent:
         #check for overly short plans
         if len(plan_items) < 2:
             return False 
-        #print(json.dumps(plan_items, indent=4))
+    
+        # every plan_item is in the format hh:mm pm/am <activity> or h:am pm/am <activity>
         for plan_item in plan_items:
-            # every plan_item is in the format hh:mm pm/am or h:am pm/am
             plan_colon_split = plan_item.split(":")
             # starts with a time
             if len(plan_colon_split) > 2 and plan_colon_split[0].isdigit() and len(plan_colon_split[1].split(" ")) == 2 and plan_colon_split[1].split(" ")[0].isdigit() and plan_colon_split[1].split(" ")[1] in ["am", "pm"]:
                 pass
             else:
                 return False
-        plan_item = plan_items[-1]
         
         #we want a plan that ends before midnight
+        plan_item = plan_items[-1]
         if plan_item.split(":")[1].split(" ")[1] == "am":
             return False
-
         return True
+
+    @staticmethod
+    def postprocess_initial_plan(plan):
+        # remove prepended or trailing whitespace (including newlines)
+        plan = plan.strip()
+
+        # remove empty lines
+        plan_list = plan.split('\n')
+        plan = '\n'.join([plan_item for plan_item in plan_list if len(plan_item.strip())])
+
+        # use ending time instead of time interval 07:00 am - 07:15 am
+        plan_list = plan.split('\n')
+        new_plan_list = []
+        for plan_item in plan_list:
+            # if there exists a hyphen (likely 07:00 am - 07:15 am) and three colons (i.e. 2 in time and 1 demarcating start of activity - splitting into 4 components), very likely to be time interval
+            if len(plan_item.split("-")) > 1 and len(plan_item.split(":")) > 3:
+                new_plan_list.append(plan_item.split("-", 1)[1].strip())
+            else:
+                new_plan_list.append(plan_item)
+
+        plan = '\n'.join(new_plan_list)
+
+        # insert prepended 0 for situations like 7:15am instead of 07:15am
+        plan_list = plan.split('\n')
+        new_plan_list = []
+        for plan_item in plan_list:
+            if len(plan_item.split(":")[0]) < 2:
+                new_plan_list.append("0"+plan_item)
+            else:
+                new_plan_list.append(plan_item)
+        plan = '\n'.join(new_plan_list)
+
+        # remove lines not starting with time
+        plan = '\n'.join([plan_item for plan_item in plan.split('\n') if len(plan_item.split(":")[0]) == 2])
+
+        # lowercase first character of activity as well as PM/AM if exists
+        plan_list = plan.split('\n')
+        new_plan_list = []
+        for plan_item in plan_list:
+            if len(plan_item) > 11:
+                new_plan_list.append(plan_item[:11].lower() + plan_item[11:])
+            else:
+                new_plan_list.append(plan_item)
+
+        plan = '\n'.join(new_plan_list)
+        return plan
+
+
 
     def initial_plan(self, curr_time, condition=None, max_attempts=10):
         """
@@ -113,8 +161,9 @@ On {date},
             resulting_plan = self.LLM.get_llm_response(prompt)
             if DatetimeNL.get_time_nl(curr_time) != "12:00 am":
                 resulting_plan = f"{DatetimeNL.get_time_nl(curr_time)}:" + resulting_plan
-            resulting_plan = resulting_plan.split('\n')
-            resulting_plan = '\n'.join([plan_item for plan_item in resulting_plan if plan_item.strip()])
+            
+            resulting_plan = GenerativeAgent.postprocess_initial_plan(resulting_plan)
+
             attempts += 1
             logging.info(f"planning day attempt number {attempts} / {max_attempts}")
             logging.info(resulting_plan)
@@ -438,9 +487,14 @@ Plan in intervals of {time_interval}:
                 return one_string[i:]
         return ''
 
-    def get_agent_action_retrieval_only(self, curr_time):
-        # Similar to pGenerative Agent paper, only carries out the plan no new action needed
-        plan = [memory_item for memory_item in self.memory if memory_item['memory_type'] == '15 minutes plan'][-1]['activity']
+    def get_agent_action_retrieval_only_helper(self, curr_time, plan_type='15 minutes'):
+        
+        # Similar to Generative Agent paper, only carries out the plan no new action needed
+        if plan_type == '15 minutes':
+            plan = [memory_item for memory_item in self.memory if memory_item['memory_type'] == '15 minutes plan'][-1]['activity']
+        else:
+            plan = [memory_item for memory_item in self.memory if memory_item['memory_type'] == 'day_plan'][-1]['activity']
+
         plan = plan.lower()
 
         time_nl = DatetimeNL.get_time_nl(curr_time)
@@ -450,31 +504,39 @@ Plan in intervals of {time_interval}:
         plan_items = [GenerativeAgent.remove_formatting_before_time(plan_item) for plan_item in plan_items if GenerativeAgent.remove_formatting_before_time(plan_item)]
 
         # exact match when the 15 min plan has time for every 15 minute intervals
-        for plan_item in plan_items:
-            if plan_item.strip().startswith(time_nl):
-                return plan_item[len(time_nl)+1:].strip()
+        # for plan_item in plan_items:
+        #     if plan_item.strip().startswith(time_nl):
+        #         return plan_item[len(time_nl)+1:].strip()
 
         # in case 15 min plan doesn't have all 15 min intervals (e.g. some 30m or 45m intervals are combined together in one entry)
         date = DatetimeNL.get_date_nl(curr_time)
-
-        # if curr_time is later than last entry time, agent is sleep
-        last_entry_time_nl = ":".join(plan_items[-1].split(":")[:2])
-        if DatetimeNL.convert_nl_datetime_to_datetime(date, last_entry_time_nl) < curr_time:
-            return "sleep"
+        # # if curr_time is later than last entry time, agent is sleep --> no longer true after partial 15m plans
+        # last_entry_time_nl = ":".join(plan_items[-1].split(":")[:2])
+        # if DatetimeNL.convert_nl_datetime_to_datetime(date, last_entry_time_nl) < curr_time:
+        #     return "sleep"
         
         last_activity = None
         for plan_item in plan_items:
             entry_time_nl = ":".join(plan_item.split(":")[:2])
-            if DatetimeNL.convert_nl_datetime_to_datetime(date, entry_time_nl) < curr_time:
+            if DatetimeNL.convert_nl_datetime_to_datetime(date, entry_time_nl) <= curr_time:
                 last_activity = ':'.join(plan_item.split(":")[2:])
         if last_activity is not None:
             return last_activity
     
         # if not in plan default is sleep
         return "sleep"
+
+
+    def get_agent_action_retrieval_only(self, curr_time, plan_type='15 minutes'):
+        action_day_plan = self.get_agent_action_retrieval_only_helper(curr_time, plan_type='day')
+        action_15m_plan = self.get_agent_action_retrieval_only_helper(curr_time, plan_type='15 minutes')
+        return f"{action_day_plan} > {action_15m_plan}"
+
     
-    def get_plan_after_curr_time(self, curr_time):
-        plan = [memory_item for memory_item in self.memory if memory_item['memory_type'] == '15 minutes plan'][-1]['activity']
+    def get_plan_after_curr_time(self, curr_time, plan_type='15 minutes'):
+        if plan_type == '15 minutes':
+            plan = [memory_item for memory_item in self.memory if memory_item['memory_type'] == '15 minutes plan'][-1]['activity']
+        
         time_nl = DatetimeNL.get_time_nl(curr_time)
         plan_items = plan.split('\n')
         #exact match
@@ -491,7 +553,7 @@ Plan in intervals of {time_interval}:
         last_i_before_curr_time = None
         for i, plan_item in enumerate(plan_items):
             entry_time_nl = ":".join(plan_item.split(":")[:2])
-            if DatetimeNL.convert_nl_datetime_to_datetime(date, entry_time_nl) < curr_time:
+            if DatetimeNL.convert_nl_datetime_to_datetime(date, entry_time_nl) <= curr_time:
                 last_i_before_curr_time = i
             else:
                 break
@@ -554,6 +616,8 @@ Plan in intervals of {time_interval}:
 
     @staticmethod
     def convert_conversation_in_linearized_representation(conversation_history):
+        if not conversation_history:
+            return ''
         linearized_conversation_history = 'Here is the dialogue history:\n'
         for turn in conversation_history:
             #sometime conversation last turn has no text
@@ -631,7 +695,184 @@ Plan in intervals of {time_interval}:
 
         return conversation_history
 
+    def get_day_plan_current_and_next_activity(self, curr_time):
+        # Similar to Generative Agent paper, only carries out the plan no new action needed
+        plan = [memory_item for memory_item in self.memory if memory_item['memory_type'] == 'day_plan'][-1]['activity']
+        return GenerativeAgent.get_day_plan_current_and_next_activity_helper(plan, curr_time)
+
+    @staticmethod
+    def get_day_plan_current_and_next_activity_helper(plan, curr_time):
+        time_nl = DatetimeNL.get_time_nl(curr_time)
+        plan_items = plan.split('\n')
+
+        date = DatetimeNL.get_date_nl(curr_time)
+
+        # if curr_time is earlier than first entry time, agent is asleep
+        first_entry_time_nl = ":".join(plan_items[0].split(":")[:2])
+        if DatetimeNL.convert_nl_datetime_to_datetime(date, first_entry_time_nl) > curr_time:
+            return f"12:00 am: sleep", plan_items[0]
+        
+        # if curr_time is later than last entry time, agent is asleep
+        last_entry_time_nl = ":".join(plan_items[-1].split(":")[:2])
+        if DatetimeNL.convert_nl_datetime_to_datetime(date, last_entry_time_nl) <= curr_time:
+            return plan_items[-1], f"11:59 pm: sleep"
+
+        for i, plan_item in enumerate(plan_items):
+            entry_time_nl = ":".join(plan_item.split(":")[:2])
+            if DatetimeNL.convert_nl_datetime_to_datetime(date, entry_time_nl) <= curr_time:
+                curr_activity, next_activity = plan_item, plan_items[i+1]
+                
+            
+        return curr_activity, next_activity
+
+    def get_15m_plan(self, curr_time, max_attempts=5):
+        curr_activity, next_activity = self.get_day_plan_current_and_next_activity(curr_time)
+        date_nl = DatetimeNL.get_date_nl(curr_time)
+
+    
+        time_start_nl, time_end_nl = GenerativeAgent.get_expected_time_start_and_end_nl(curr_activity, next_activity, date_nl, time_interval="15 minutes")
+        
+        time_interval = "15 minutes"
+
+        resulting_plan = None
+        attempts = 0
+
+        while not GenerativeAgent.check_plan_format(resulting_plan) and not GenerativeAgent.check_plan_follow_time_start_and_end_and_15m_interval(resulting_plan, time_start_nl, time_end_nl, date_nl) and attempts < max_attempts:
+            resulting_plan = GenerativeAgent.expand_plan_into_15m_intervals(self.LLM, curr_activity, next_activity, date_nl, time_interval=time_interval)
+
+            attempts += 1
+            logging.info(f"planning {time_interval} attempt number {attempts} / {max_attempts}")
+            logging.info(resulting_plan)
+
+        # if attempts == max_attempts:
+        #     raise ValueError(f"Get {time_interval} plan failed")
+
+        fifteen_minute_plan_activity = [memory_item["activity"] for memory_item in self.memory if memory_item["memory_type"] == f"{time_interval} plan"]
+        
+        if fifteen_minute_plan_activity and fifteen_minute_plan_activity[-1] == resulting_plan:
+            # 15m plan has already been recorded  in memory
+            pass
+        else:
+            self.add_to_memory(activity=resulting_plan, curr_time=curr_time, memory_type=f"{time_interval} plan")
+        return resulting_plan
+
+    @staticmethod
+    def check_plan_follow_time_start_and_end_and_15m_interval(plan, time_start_nl, time_end_nl, date_nl):
+        if plan is None:
+            return False
+
+        # if asleep than assume plan is in right format
+        if "sleep" in plan:
+            return True
+
+        plan_list = plan.split('\n')
+        # test that plan starts and ends at the specified time
+        if not (plan_list[0].startswith(time_start_nl) and plan_list[-1].startswith(time_end_nl)):
+            return False
+        
+        time_curr = DatetimeNL.convert_nl_datetime_to_datetime(date_nl, time_start_nl) 
+
+        # check that every increment is 15 minutes
+        for plan_item in plan_list:
+            time_curr_nl = DatetimeNL.get_time_nl(time_curr)
+            if not plan_item.startswith(time_curr_nl):
+                return False
+            time_curr = DatetimeNL.add_15_min(time_curr)
+        return True
+
+    @staticmethod
+    def get_expected_time_start_and_end_nl(curr_activity, next_activity, date_nl, time_interval="15 minutes"):
+        time_start_nl = ":".join(curr_activity.split(":")[:2])
+        time_end_nl = ":".join(next_activity.split(":")[:2])
+
+        #taking 15 min away so that plan doesn't overlap with next plan
+        if time_interval == "15 minutes":
+            time_end = DatetimeNL.convert_nl_datetime_to_datetime(date_nl, time_end_nl) 
+            time_end = DatetimeNL.subtract_15_min(time_end)
+            time_end_nl = DatetimeNL.get_time_nl(time_end)
+        return time_start_nl, time_end_nl
+    
+    @staticmethod
+    def postprocess_expanded_15m_plan(plan, time_start_nl, time_end_nl, date_nl):
+
+        # remove prepended or trailing whitespace (including newlines)
+        plan = plan.strip()
+
+        # remove empty lines
+        plan_list = plan.split('\n')
+        plan = '\n'.join([plan_item for plan_item in plan_list if len(plan_item.strip())])
+
+        # use ending time instead of time interval 07:00 am - 07:15 am
+        plan_list = plan.split('\n')
+        new_plan_list = []
+        for plan_item in plan_list:
+            # if there exists a hyphen (likely 07:00 am - 07:15 am) and three colons (i.e. 2 in time and 1 demarcating start of activity - splitting into 4 components), very likely to be time interval
+            if len(plan_item.split("-")) > 1 and len(plan_item.split(":")) > 3:
+                new_plan_list.append(plan_item.split("-", 1)[1].strip())
+            else:
+                new_plan_list.append(plan_item)
+
+        plan = '\n'.join(new_plan_list)
+
+        # insert prepended 0 for situations like 7:15am instead of 07:15am
+        plan_list = plan.split('\n')
+        new_plan_list = []
+        for plan_item in plan_list:
+            if len(plan_item.split(":")[0]) < 2:
+                new_plan_list.append("0"+plan_item)
+            else:
+                new_plan_list.append(plan_item)
+        plan = '\n'.join(new_plan_list)
+
+        # remove lines not starting with time
+        plan = '\n'.join([plan_item for plan_item in plan.split('\n') if len(plan_item.split(":")[0]) == 2])
+
+        # lowercase first character of activity as well as PM/AM if exists
+        plan_list = plan.split('\n')
+        new_plan_list = []
+        for plan_item in plan_list:
+            if len(plan_item) > 11:
+                new_plan_list.append(plan_item[:11].lower() + plan_item[11:])
+            else:
+                new_plan_list.append(plan_item)
+
+        plan = '\n'.join(new_plan_list)
+
+        # remove duplicate entries at the same time, entries not required for interval (e.g. if every min when asked for every 15m), before time_start or after time_end
+        time_curr = DatetimeNL.convert_nl_datetime_to_datetime(date_nl, time_start_nl) 
+        plan_list = plan.split('\n')
+        new_plan_list = []
+        for plan_item in plan_list:
+            time_curr_nl = DatetimeNL.get_time_nl(time_curr)
+            if plan_item.startswith(time_curr_nl):
+                new_plan_list.append(plan_item)
+                # only update time when item has been added
+                time_curr = DatetimeNL.add_15_min(time_curr)
+            if plan_item.startswith(time_end_nl):
+                break
+        plan = '\n'.join(new_plan_list)
+
+        return plan
+
+    @staticmethod
+    @cache
+    def expand_plan_into_15m_intervals(LLM, curr_activity, next_activity, date_nl, time_interval="15 minutes"):
+        time_start_nl, time_end_nl = GenerativeAgent.get_expected_time_start_and_end_nl(curr_activity, next_activity, date_nl, time_interval="15 minutes")
+        
+        activity_name =  ":".join(curr_activity.split(":")[2:])
+
+        if 'sleep' in activity_name.lower():
+            return '12:00 am: sleep'
+        prompt = f"""
+Please detail the overarching activity ({activity_name}) into constituent activities (each starting with a verb) at intervals of {time_interval} between {time_start_nl} and {time_end_nl}. 
+Format: hh:mm am/pm: <activity>\n
+"""
+        llm_response = LLM.get_llm_response(prompt)
+        return GenerativeAgent.postprocess_expanded_15m_plan(llm_response, time_start_nl, time_end_nl, date_nl)
+
     def get_status_json(self, curr_time, world_location):
+        self.get_15m_plan(curr_time)
+
         activity = self.get_agent_action_retrieval_only(curr_time)
         activity_emoji = self.convert_to_emoji(activity)
         location = self.get_agent_location(activity, curr_time, world_location)

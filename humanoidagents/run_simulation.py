@@ -7,10 +7,9 @@ import logging
 import yaml
 from tqdm import tqdm
 
-from humanoid_agent import HumanoidAgent
-
-from location import Location
-from utils import DatetimeNL, load_json_file, write_json_file, bucket_agents_by_location, get_pairwise_conversation_by_agents_in_same_location, override_agent_kwargs_with_condition
+from humanoidagents.humanoid_agent import HumanoidAgent
+from humanoidagents.location import Location
+from humanoidagents.utils import DatetimeNL, load_json_file, write_json_file, bucket_agents_by_location, get_pairwise_conversation_by_agents_in_same_location, override_agent_kwargs_with_condition
 
 logging.basicConfig(format='---%(asctime)s %(levelname)s \n%(message)s ---', level=logging.INFO)
 

@@ -3,8 +3,9 @@ import random
 from functools import cache
 import logging
 
-from utils import DatetimeNL
-from generative_agent import GenerativeAgent
+from humanoidagents.generative_agent import GenerativeAgent
+from humanoidagents.utils import DatetimeNL
+
 
 
 class HumanoidAgent(GenerativeAgent):
@@ -90,30 +91,34 @@ class HumanoidAgent(GenerativeAgent):
         self.add_to_memory(activity=activity, curr_time=curr_time, memory_type="action")
         return activity
 
-    
+    @staticmethod
+    def change_plans_helper(LLM, suggested_change, existing_plan):
+        prompt = f"""
+Please use the suggested change ({suggested_change}) to edit activities in the original plan.
+Format: hh:mm am/pm: <activity within 10 words>
 
+original plan: 
+{existing_plan}
+
+updated plan:
+"""
+        llm_response = LLM.get_llm_response(prompt)
+        plan = HumanoidAgent.postprocess_change_plans_helper(llm_response)
+        return plan
+
+    @staticmethod
+    def postprocess_change_plans_helper(plan):
+        plan = plan.split('\n')
+        plan = '\n'.join([plan_item for plan_item in plan if plan_item.strip()])
+        return plan
+    
     def change_plans(self, suggested_change, curr_time, max_attempts=10):
         existing_plan = self.get_plan_after_curr_time(curr_time)
         time_nl = DatetimeNL.get_time_nl(curr_time)
-
-        #Suggestion made at {time_nl}: {suggested_change}
-        #Be concise and keep each activity to less than 10 words.
-        prompt = f"""
-        Please use the suggested change ({suggested_change}) to edit activities in the original plan.
-        Format: hh:mm am/pm: <activity within 10 words>
-        
-        original plan: 
-        {existing_plan}
-
-        updated plan:
-        """
-        # print(prompt)
         plan = None
         attempts = 0
         while not GenerativeAgent.check_plan_format(plan) and attempts < max_attempts:
-            plan = self.LLM.get_llm_response(prompt)
-            plan = plan.split('\n')
-            plan = '\n'.join([plan_item for plan_item in plan if plan_item.strip()])
+            plan = HumanoidAgent.change_plans_helper(self.LLM, suggested_change, existing_plan)
 
             attempts += 1
             logging.info(f"replanning at {time_nl} attempt number {attempts} / {max_attempts}")
@@ -160,9 +165,10 @@ class HumanoidAgent(GenerativeAgent):
         return activity
 
     @staticmethod
-    def identify_in_list_else_first_option(emotion, possible_emotions):
-        if emotion in possible_emotions:
-            return emotion
+    def postprocess_get_emotion_about_activity(emotion, possible_emotions):
+        for possible_emotion in possible_emotions:
+            if possible_emotion in emotion.lower():
+                return possible_emotion
         return possible_emotions[0]
 
     def get_emotion_about_activity(self, activity):
@@ -170,9 +176,9 @@ class HumanoidAgent(GenerativeAgent):
 
         emotion_prompt = f"In the following activity '{activity}', what emotion is expressed? Please reply in one word from this list {possible_emotions} only."
 
-        emotion =  self.LLM.get_llm_response(emotion_prompt, max_tokens=4)
+        llm_response =  self.LLM.get_llm_response(emotion_prompt, max_tokens=4)
 
-        return HumanoidAgent.identify_in_list_else_first_option(emotion, possible_emotions)
+        return HumanoidAgent.postprocess_get_emotion_about_activity(llm_response, possible_emotions)
 
     def analyze_agent_activity(self, activity):
     
@@ -221,11 +227,9 @@ class HumanoidAgent(GenerativeAgent):
             # self turn
 
             # if first turn
-            if not conversation_history:
-                response_self = self.get_agent_reaction_about_another_agent(other_agent, curr_time)
-            else:
-                response_self = self.get_agent_reaction_to_another_agent_utterance_e2e(conversation_history[-1]["text"], other_agent, curr_time)
+            response_self = self.get_agent_reaction_about_another_agent(other_agent, curr_time, conversation_history=conversation_history)
             
+            print("response_self", response_self)
 
             speak_self = self.speak_to_other_agent(other_agent, curr_time, reaction=response_self, conversation_history=conversation_history)
 
@@ -240,7 +244,7 @@ class HumanoidAgent(GenerativeAgent):
             logging.info(json.dumps(conversation_history[-1], indent=4))
 
             # other turn 
-            response_other = other_agent.get_agent_reaction_to_another_agent_utterance_e2e(conversation_history[-1]["text"], self, curr_time)
+            response_other = other_agent.get_agent_reaction_about_another_agent(self, curr_time, conversation_history=conversation_history)
 
             speak_other = other_agent.speak_to_other_agent(self, curr_time, reaction=response_other, conversation_history=conversation_history)
 
@@ -264,10 +268,13 @@ class HumanoidAgent(GenerativeAgent):
         return conversation_history
     
     def get_status_json(self, curr_time, world_location):
+        self.get_15m_plan(curr_time)
+
         activity = self.get_agent_action_retrieval_based(curr_time)
         activity_emoji = self.convert_to_emoji(activity)
         location = self.get_agent_location(activity, curr_time, world_location)
         most_recent_15m_plan = [memory_item for memory_item in self.memory if memory_item['memory_type'] == '15 minutes plan'][-1]['activity']
+        most_recent_day_plan = [memory_item for memory_item in self.memory if memory_item['memory_type'] == 'day_plan'][-1]['activity']
 
         # tracking most recent suggested change to understand suggestion made to change
         most_recent_suggested_change = self.suggested_changes[-1] if self.suggested_changes else None
@@ -284,6 +291,7 @@ class HumanoidAgent(GenerativeAgent):
             "activity": activity,
             "activity_emoji": activity_emoji,
             "most_recent_15m_plan": most_recent_15m_plan,
+            "most_recent_day_plan": most_recent_day_plan,
             "most_recent_suggested_change": most_recent_suggested_change,
             "location": location, 
             "emotion": self.emotion,
@@ -292,6 +300,7 @@ class HumanoidAgent(GenerativeAgent):
         }
         return status
     
+
     def speak_to_other_agent(self, other_agent, curr_time, reaction=None, conversation_history=[]):
         # traits are already part of self.summary
         # for Humanoid agent, we added the emotion/emotion/basic needs/closeness on top of Generative Agent
@@ -308,28 +317,42 @@ class HumanoidAgent(GenerativeAgent):
         closeness = self.get_closeness_between_self_and_other_agent(other_agent)
         summary_of_relevant_context = self.get_summary_of_relevant_context(other_agent, other_activity, curr_time)
 
-        if not conversation_history:
-            # first turn, use only the intent of the speaker to ground
-            background = f"{self.name} hopes to do this: {reaction}"
-        else:
-            # else continue the conversation
-            background = GenerativeAgent.convert_conversation_in_linearized_representation(conversation_history)
-            background += f"{self.name} hopes to do this: {reaction}"
+        linearized_conversation_history = GenerativeAgent.convert_conversation_in_linearized_representation(conversation_history) 
+        
+        self_name = self.name 
+        other_name = other_agent.name
+        return HumanoidAgent.speak_to_other_agent_helper(self.LLM, self_summary, basic_needs_and_emotional_state, closeness, formatted_date_time, self_name, self_activity, other_name, other_activity, summary_of_relevant_context, reaction, linearized_conversation_history)
 
+
+    @staticmethod
+    def speak_to_other_agent_helper(LLM, self_summary, basic_needs_and_emotional_state, closeness, formatted_date_time, self_name, self_activity, other_name, other_activity, summary_of_relevant_context, reaction, linearized_conversation_history):
         prompt = f"""
-        {self_summary}
-        {"Feelings: " + basic_needs_and_emotional_state if basic_needs_and_emotional_state else ""}
-        Closeness: {closeness}
-        {formatted_date_time}
-        {self.name}’s status: {self_activity}
-        Observation: {self.name} saw {other_agent.name} {other_activity}
-        Summary of relevant context from {self.name}’s memory:
-        {summary_of_relevant_context}
-        {background}
-        What would he say next to {other_agent.name}?
-        {self.name}:"""
+{self_summary}
+{"Feelings: " + basic_needs_and_emotional_state if basic_needs_and_emotional_state else ""}
+Closeness: {closeness}
+{formatted_date_time}
+{self_name}’s status: {self_activity}
+Observation: {self_name} saw {other_name} {other_activity}
+Summary of relevant context from {self_name}’s memory:
+{summary_of_relevant_context}
+{self_name} hopes to do this: {reaction}
+{linearized_conversation_history}
+What would he say next to {other_name}?
+{self_name}:"""
+        llm_response = LLM.get_llm_response(prompt)
 
-        return self.LLM.get_llm_response(prompt)
+        # in case there are leading or trailing whitespace
+
+        llm_response = llm_response.strip()
+        # in case there are multiple alternative responses presented, use the first one
+        if '\n' in llm_response:
+            llm_response = llm_response.split('\n')[0]
+        
+        # in case response starts and ends with "" as a substring within the text (i.e. sometime includes some reason on why it's said this way)
+        if len(llm_response.split('"')) == 3:
+            llm_response = llm_response.split('"')[1]
+
+        return llm_response
 
     def get_closeness_between_self_and_other_agent(self, other_agent):
         # note this value is not symmetrical 
@@ -349,36 +372,44 @@ class HumanoidAgent(GenerativeAgent):
         closeness_description = f"{self.name} is feeling {description} to {other_agent.name}"
         return closeness_description
 
-    def get_agent_reaction_to_another_agent_utterance_e2e(self, other_agent_utterance, other_agent, curr_time):
+    @staticmethod
+    def get_agent_boolean_reaction_about_another_agent_helper(LLM, self_summary, basic_needs_and_emotional_state, closeness, formatted_date_time, self_name, self_activity, linearized_conversation_history, other_name, other_activity, summary_of_relevant_context):
+        yes_or_no_prompt = f"""
+{self_summary}
+{"Feelings: " + basic_needs_and_emotional_state if basic_needs_and_emotional_state else ""}
+Closeness: {closeness}
+{formatted_date_time}
+{self_name}’s status: {self_activity}
+Observation: {self_name} saw {other_name} {other_activity}
+{linearized_conversation_history}
+Summary of relevant context from {self_name}’s memory:
+{summary_of_relevant_context}
+Should {self_name} react to the observation? Please respond with only yes or no.
+""" 
+        llm_response = LLM.get_llm_response(yes_or_no_prompt, max_tokens=2)
+        return "yes" in llm_response.lower()
 
-        self_activity = self.get_agent_action_retrieval_only(curr_time)
-        other_activity = other_agent.get_agent_action_retrieval_only(curr_time)
-        basic_needs_and_emotional_state = self.get_agent_states_nl()
-        closeness = self.get_closeness_between_self_and_other_agent(other_agent)
-
-        formatted_date_time = DatetimeNL.get_formatted_date_time(curr_time)
-        summary_of_relevant_context = self.get_summary_of_relevant_context(other_agent, other_activity, curr_time)
-        self_summary = self.get_agent_summary_description(curr_time)
-        prompt = f"""
-        {self_summary}
-        {"Feelings: " + basic_needs_and_emotional_state if basic_needs_and_emotional_state else ""}
-        Closeness: {closeness}
-        {formatted_date_time}
-        {self.name}’s status: {self_activity}
-        Observation: {self.name} heard {other_agent.name} say {other_agent_utterance}
-        Summary of relevant context from {self.name}’s memory:
-        {summary_of_relevant_context}
-        Should {self.name} react to the observation? Please respond with either yes or no. If yes, please also then suggest an appropriate reaction in 1 sentence.
-        """
-        reaction_raw = self.LLM.get_llm_response(prompt)
-        reaction_processed = GenerativeAgent.parse_reaction_response(reaction_raw)
-        return reaction_processed
+    @staticmethod
+    def get_agent_reaction_about_another_agent_helper(LLM, self_summary, basic_needs_and_emotional_state, closeness, formatted_date_time, self_name, self_activity, linearized_conversation_history, other_name, other_activity, summary_of_relevant_context):
+        reaction_prompt = f"""
+{self_summary}
+{"Feelings: " + basic_needs_and_emotional_state if basic_needs_and_emotional_state else ""}
+Closeness: {closeness}
+{formatted_date_time}
+{self_name}’s status: {self_activity}
+Observation: {self_name} saw {other_name} {other_activity}
+{linearized_conversation_history}
+Summary of relevant context from {self_name}’s memory:
+{summary_of_relevant_context}
+In 1 sentence, how should {self_name} react to the observation?
+"""
+        llm_response = LLM.get_llm_response(reaction_prompt)
+        return llm_response.strip()
 
 
-    def get_agent_reaction_about_another_agent(self, other_agent, curr_time):
+    def get_agent_reaction_about_another_agent(self, other_agent, curr_time, conversation_history=None):
         # for Humanoid agent, we added the emotion/basic needs and closeness on top of Generative Agent
         # later on we can do ablation of emotion/basic needs/closeness in conversation
-
         self_activity = self.get_agent_action_retrieval_only(curr_time)
         other_activity = other_agent.get_agent_action_retrieval_only(curr_time)
         basic_needs_and_emotional_state = self.get_agent_states_nl()
@@ -387,27 +418,21 @@ class HumanoidAgent(GenerativeAgent):
         formatted_date_time = DatetimeNL.get_formatted_date_time(curr_time)
         summary_of_relevant_context = self.get_summary_of_relevant_context(other_agent, other_activity, curr_time)
         self_summary = self.get_agent_summary_description(curr_time)
-        prompt = f"""
-        {self_summary}
-        {"Feelings: " + basic_needs_and_emotional_state if basic_needs_and_emotional_state else ""}
-        Closeness: {closeness}
-        {formatted_date_time}
-        {self.name}’s status: {self_activity}
-        Observation: {self.name} saw {other_agent.name} {other_activity}
-        Summary of relevant context from {self.name}’s memory:
-        {summary_of_relevant_context}
-        Should {self.name} react to the observation? Please respond with either yes or no. If yes, please also then suggest an appropriate reaction in 1 sentence.
-        """
-        # print(prompt)
-        # raise ValueError("Using Humanoid Agent.get_agent_reaction_about_another_agent")
 
-        reaction_raw = self.LLM.get_llm_response(prompt)
-        # print(f"Raw reaction response by {self.name}:",reaction_raw)
-        reaction_processed = GenerativeAgent.parse_reaction_response(reaction_raw)
-        #based on the paper, need to re-plan with every reaction but don't think super helpful here
+        self_name = self.name
+        other_name = other_agent.name
+        linearized_conversation_history = GenerativeAgent.convert_conversation_in_linearized_representation(conversation_history)
+
+        react_or_not = HumanoidAgent.get_agent_boolean_reaction_about_another_agent_helper(self.LLM, self_summary, basic_needs_and_emotional_state, closeness, formatted_date_time, self_name, self_activity, linearized_conversation_history, other_name, other_activity, summary_of_relevant_context)
+
+        if react_or_not:
+            return HumanoidAgent.get_agent_reaction_about_another_agent_helper(self.LLM, self_summary, basic_needs_and_emotional_state, closeness, formatted_date_time, self_name, self_activity, linearized_conversation_history, other_name, other_activity, summary_of_relevant_context)
+        else: 
+            return None
+
+        #based on Generative Agents paper, need to re-plan with every reaction but don't think super helpful here
         # if reaction_processed is not None:
         #     self.plan(curr_time)
-        return reaction_processed
-
+        #return reaction_processed
 
 

@@ -66,10 +66,8 @@ class DatetimeNL:
 
     @staticmethod
     def get_time_nl(curr_time):
-        #e.g. 12:00 am
+        #e.g. 12:00 am and 07:00 pm (note there is a leading zero for 7pm)
         time = curr_time.strftime('%I:%M %p').lower()
-        if time.startswith('0'):
-            time = time[1:]
         return time
 
     @staticmethod
@@ -82,6 +80,12 @@ class DatetimeNL:
         curr_time = datetime.strptime(concatenated_date_time, "%A %b %d %Y %I:%M %p")
         return curr_time
 
+    def subtract_15_min(curr_time):
+        return curr_time - timedelta(minutes=15)
+    
+    def add_15_min(curr_time):
+        return curr_time + timedelta(minutes=15)
+        
     @staticmethod
     def get_formatted_date_time(curr_time):
         # e.g. "It is Monday Jan 02 2023 12:00 am"
