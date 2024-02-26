@@ -173,13 +173,22 @@ You don't have to modify every method (if you don't and don't want the NotImplem
 ## Citation
 
 ```bibtex
-@misc{wang2023humanoid,
-      title={Humanoid Agents: Platform for Simulating Human-like Generative Agents}, 
-      author={Zhilin Wang and Yu Ying Chiu and Yu Cheung Chiu},
-      year={2023},
-      eprint={2310.05418},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL}
+@inproceedings{wang-etal-2023-humanoid,
+    title = "Humanoid Agents: Platform for Simulating Human-like Generative Agents",
+    author = "Wang, Zhilin  and
+      Chiu, Yu Ying  and
+      Chiu, Yu Cheung",
+    editor = "Feng, Yansong  and
+      Lefever, Els",
+    booktitle = "Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
+    month = dec,
+    year = "2023",
+    address = "Singapore",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2023.emnlp-demo.15",
+    doi = "10.18653/v1/2023.emnlp-demo.15",
+    pages = "167--176",
+    abstract = "Just as computational simulations of atoms, molecules and cells have shaped the way we study the sciences, true-to-life simulations of human-like agents can be valuable tools for studying human behavior. We propose Humanoid Agents, a system that guides Generative Agents to behave more like humans by introducing three elements of System 1 processing: Basic needs (e.g. hunger, health and energy), Emotion and Closeness in Relationships. Humanoid Agents are able to use these dynamic elements to adapt their daily activities and conversations with other agents, as supported with empirical experiments. Our system is designed to be extensible to various settings, three of which we demonstrate, as well as to other elements influencing human behavior (e.g. empathy, moral values and cultural background). Our platform also includes a Unity WebGL game interface for visualization and an interactive analytics dashboard to show agent statuses over time. Our platform is available on https://www.humanoidagents.com/ and code is on https://github.com/HumanoidAgents/HumanoidAgents",
 }
 ```
 
