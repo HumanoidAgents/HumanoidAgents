@@ -1,5 +1,7 @@
 import json
 import random
+import yaml
+
 from collections import defaultdict
 from datetime import datetime, timedelta
 
@@ -53,6 +55,19 @@ def override_agent_kwargs_with_condition(kwargs, condition):
     else:
         raise ValueError("condition is not valid")
     return kwargs
+
+def get_curr_time_to_daily_event(daily_events_filename):
+    curr_time_to_daily_event = defaultdict(None)
+
+    if daily_events_filename is not None:
+        with open(daily_events_filename, 'r') as file:
+            loaded_yaml = yaml.safe_load(file)
+        for date, event in loaded_yaml.items():
+            time = "12:00 am"
+            curr_time = DatetimeNL.convert_nl_datetime_to_datetime(date, time)
+            curr_time_to_daily_event[curr_time] = event
+    return curr_time_to_daily_event
+
 
 class DatetimeNL:
 

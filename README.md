@@ -71,6 +71,8 @@ Optional arguments
 
 5. (NEW) ```--llm```  refers to the Large Language Model you would to use. Choose between ```openai``` for ChatGPT-3.5-turbo for LLM and Ada-v2 for embedding respectively and ```local``` (default) for a locally hosted LLM (such as Mistral 7B, Mixtral or any LlaMA models) and a local embedding model (such as sentence-transformers/all-MiniLM-L6-v2). Please note that the openai option charges to yout OpenAI account. For ```local```, you would also need to start a OpenAI-compatible server. There are many ways to do this but we recommend [LM Studio](https://lmstudio.ai/), a no-code solution equipped with a GUI, as a first attempt to do this.
 
+6. (NEW) ```--daily_events_filename``` refers to major events affecting all agents in a simulation, to provide simulation based on customized settings of your preference. For an example of the expected structure, see ```daily_events/example.yaml``` 
+
 ## Customizing locations and specific agents
 
 Currently, we support three built-in settings
