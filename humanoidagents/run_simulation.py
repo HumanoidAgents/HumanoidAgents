@@ -1,15 +1,14 @@
-import json
-import os
 import argparse
-from datetime import datetime
+import json
 import logging
+import os
+from datetime import datetime
 
-import yaml
 from tqdm import tqdm
 
 from humanoidagents.humanoid_agent import HumanoidAgent
 from humanoidagents.location import Location
-from humanoidagents.utils import DatetimeNL, load_json_file, write_json_file, bucket_agents_by_location, get_pairwise_conversation_by_agents_in_same_location, override_agent_kwargs_with_condition
+from humanoidagents.utils import DatetimeNL, load_json_file, write_json_file, bucket_agents_by_location, get_pairwise_conversation_by_agents_in_same_location, override_agent_kwargs_with_condition, get_curr_time_to_daily_event
 
 logging.basicConfig(format='---%(asctime)s %(levelname)s \n%(message)s ---', level=logging.INFO)
 
@@ -24,6 +23,7 @@ parser.add_argument("-c", "--condition", default=None, choices=["disgusted", "af
                                             "fullness", "social", "fun", "health", "energy", 
                                             "closeness_0", "closeness_5", "closeness_10", "closeness_15", None])
 parser.add_argument("-l", "--llm", default="local", choices=["openai", "local"])
+parser.add_argument("-daf", "--daily_events_filename", default=None)
 
 
 args = parser.parse_args()
@@ -38,6 +38,7 @@ start_date = args.start_date
 end_date = args.end_date
 default_agent_config_filename = args.default_agent_config_filename
 llm = args.llm
+daily_events_filename = args.daily_events_filename
 
 
 ## location
@@ -58,6 +59,8 @@ for agent_filename in agent_filenames:
     agents.append(agent)
     
 
+## daily_events
+curr_time_to_daily_event = get_curr_time_to_daily_event(daily_events_filename)
 
 ## time
 dates_of_interest = DatetimeNL.get_date_range(start_date, end_date)
@@ -72,10 +75,9 @@ for hour in range(6, 24):
 
 for curr_date in dates_of_interest:
     curr_time = datetime.fromisoformat(curr_date)
-
     # plan at the start of day
     for agent in agents:
-        agent.plan(curr_time=curr_time)
+        agent.plan(curr_time=curr_time, condition=curr_time_to_daily_event[curr_time])
 
     for specific_time in tqdm(specific_times_of_interest):
 
