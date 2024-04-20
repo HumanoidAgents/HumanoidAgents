@@ -337,7 +337,7 @@ Summary of relevant context from {self_name}’s memory:
 {summary_of_relevant_context}
 {self_name} hopes to do this: {reaction}
 {linearized_conversation_history}
-What would he say next to {other_name}?
+What would {self_name} say next to {other_name}?
 {self_name}:"""
         llm_response = LLM.get_llm_response(prompt)
 
