@@ -22,7 +22,7 @@ parser.add_argument('-e', '--end_date', help='Enter end date (inclusive) by YYYY
 parser.add_argument("-c", "--condition", default=None, choices=["disgusted", "afraid", "sad", "surprised", "happy", "angry", "neutral", 
                                             "fullness", "social", "fun", "health", "energy", 
                                             "closeness_0", "closeness_5", "closeness_10", "closeness_15", None])
-parser.add_argument("-l", "--llm", default="local", choices=["openai", "local"])
+parser.add_argument("-l", "--llm", default="local", choices=["openai", "local", "mindsdb"])
 parser.add_argument("-daf", "--daily_events_filename", default=None)
 
 

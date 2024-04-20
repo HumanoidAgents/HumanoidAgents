@@ -6,7 +6,7 @@ from functools import cache
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-from humanoidagents.llm import OpenAILLM, LocalLLM
+from humanoidagents.llm import OpenAILLM, LocalLLM, MindsDBLLM
 from humanoidagents.utils import DatetimeNL
 
 class GenerativeAgent:
@@ -33,8 +33,12 @@ class GenerativeAgent:
             )
         
         self.add_to_memory(activity=self.example_day_plan, curr_time=global_start_date, memory_type="day_plan")
-
-        self.LLM = OpenAILLM if llm == "openai" else LocalLLM
+        if llm == "openai":
+            self.LLM = OpenAILLM
+        elif llm == "mindsdb":
+            self.LLM = MindsDBLLM
+        else:
+            self.LLM = LocalLLM
 
     @cache
     def plan(self, curr_time, condition=None):
