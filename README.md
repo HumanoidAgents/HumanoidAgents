@@ -141,7 +141,7 @@ See a 2 minute YouTube Walkthrough below.
 
 The standard approach of using `run_simulation.py` runs a simulation locally and saves all of the generated files so that they can be loaded into our analytics dashboard and Unity WebGL Game interface. 
 
-We recently discovered that there are certain use-cases that can benefit from real-time simulation of humanoid agents and hence developed a Flask-based REST API to interact with Humanoid Agents. To use this, simply start a server by replacing `run_simulation.py` with `run_simulation_server.py` in [Get Started](#Get Started), which supports all of the same features].
+We recently discovered that there are certain use-cases that can benefit from real-time simulation of humanoid agents and hence developed a Flask-based REST API to interact with Humanoid Agents. To use this, simply start a server by replacing `run_simulation.py` with `run_simulation_server.py` in [Get Started](#Get-Started), which supports all of the same features].
 
 Then on your client side, do
 
