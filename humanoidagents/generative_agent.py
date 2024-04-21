@@ -45,12 +45,7 @@ class GenerativeAgent:
         plan = self.initial_plan(curr_time, condition=condition)
         logging.info("day_plan")
         logging.info(plan)
-        # hourly_plan = self.recursively_decompose_plan(plan, curr_time=curr_time , time_interval="1 hour")
-        # logging.info("hourly_plan")
-        # logging.info(hourly_plan)
-        # minute_15_plan_based_on_hourly = self.recursively_decompose_plan(hourly_plan, curr_time=curr_time, time_interval="15 minutes")
-        # logging.info("minute_15_plan_based_on_hourly")
-        # logging.info(minute_15_plan_based_on_hourly)
+        return plan
 
     @staticmethod
     def check_plan_format(plan):

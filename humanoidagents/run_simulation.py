@@ -77,7 +77,8 @@ for curr_date in dates_of_interest:
     curr_time = datetime.fromisoformat(curr_date)
     # plan at the start of day
     for agent in agents:
-        agent.plan(curr_time=curr_time, condition=curr_time_to_daily_event[curr_time])
+        condition = curr_time_to_daily_event[curr_time] if curr_time in curr_time_to_daily_event else None
+        agent.plan(curr_time=curr_time, condition=condition)
 
     for specific_time in tqdm(specific_times_of_interest):
 
