@@ -69,12 +69,12 @@ Optional arguments
    
 4. ```--condition``` as noted in the paper, we can adjust the starting condition of all agents (in terms of their basic needs, emotion and closeness to others). You can use this to specify a condition (e.g. health) for all agents to be 0. See the list of accepted arguments on argparse
 
-5. (NEW) ```--llm```  refers to the Large Language Model you would to use. Choose between 
+5. ```--llm```  refers to the Large Language Model you would to use. Choose between 
  - ```local``` (default) for a locally hosted LLM (such as Mistral 7B, Mixtral or any LlaMA models) and a local embedding model (such as sentence-transformers/all-MiniLM-L6-v2).  For ```local```, you would also need to start a OpenAI-compatible server. There are many ways to do this but we recommend [LM Studio](https://lmstudio.ai/), a no-code solution equipped with a GUI, as a first attempt to do this.
 - ```openai``` for ChatGPT-3.5-turbo for LLM and Ada-v2 for embedding respectively. Please note that the openai option charges to yout OpenAI account and you would need to set ```export OPENAI_API_KEY```
  - ```mindsdb``` for ChatGPT-3.5-turbo for LLM through MindsDB. Please note that since MindsDB does not come with embedding model support, this will use OpenAI Ada-v2 for embedding directly and hence you would still need to set the ```export OPENAI_API_KEY=sk-...``` in addition to ```export MINDSDB_API_KEY=sk-...``` 
 
-6. (NEW) ```--daily_events_filename``` refers to major events affecting all agents in a simulation, to provide simulation based on customized settings of your preference. For an example of the expected structure, see ```daily_events/example.yaml``` 
+6. ```--daily_events_filename``` refers to major events affecting all agents in a simulation, to provide simulation based on customized settings of your preference. For an example of the expected structure, see ```daily_events/example.yaml``` 
 
 ## Customizing locations and specific agents
 
@@ -116,8 +116,6 @@ Optional arguments
 1. ```--start_date``` refers to the (inclusive) start date  of the interested date range when ```--mode = date_range```. The format is YYYY-MM-DD e.g. 2023-01-03
 2. ```--end_date``` refers to the (inclusive) end date  of the interested date range when ```--mode = date_range```. The format is YYYY-MM-DD e.g. 2023-01-04
 
-
-
 ## Unity WebGL Game interface
 
 The Game Interface using Unity WebGL is available on [humanoidagents.com](https://www.humanoidagents.com/)
@@ -135,10 +133,24 @@ See a 2 minute YouTube Walkthrough below.
 **Step 1.** Agent is initialized based on user-provided seed information. 
 **Step 2.** Agent plans their day.  
 **Step 3.** Agent takes an action based on their plan. 
+**Step 3a.** Agent can converse with another agent if in the same location, which can affect the closeness of their relationship.
 **Step 4.** Agent evaluates if action taken changes their basic needs status and emotion. 
 **Step 5.** Agent can update their future plan based on the satisfaction of their basic needs and emotion. 
-**Step 3a.** Agent can converse with another agent if in the same location, which can affect the closeness of their relationship.
-    
+
+## (NEW) Server-client mode
+
+The standard approach of using `run_simulation.py` runs a simulation locally and saves all of the generated files so that they can be loaded into our analytics dashboard and Unity WebGL Game interface. 
+
+We recently discovered that there are certain use-cases that can benefit from real-time simulation of humanoid agents and hence developed a Flask-based REST API to interact with Humanoid Agents. To use this, simply start a server by replacing `run_simulation.py` with `run_simulation_server.py` in [Get Started](#Get Started), which supports all of the same features].
+
+Then on your client side, do
+
+1. Visit http://127.0.0.1:5000/plan?curr_date=2023-01-03 at the start of each simulated day. This plans the day for each agent.
+2. Visit http://127.0.0.1:5000/log?curr_date=2023-01-03&specific_time=09:00 every 15 minutes, replace `09:00` with the time in `hh:mm` format.
+3. (optional) Under the hood, http://127.0.0.1:5000/log actually calls http://127.0.0.1:5000/activity and http://127.0.0.1:5000/conversations, which identifies the activity (at 15 minute interval) and the conversations between agents at each location.
+4. (optional) http://127.0.0.1:5000/activity and http://127.0.0.1:5000/plan can also be done for each agent individually. This can be done by visiting http://127.0.0.1:5000/activity_single and http://127.0.0.1:5000/plan_single respectively, with the additional argument of ```name=<agent_name>```. If you are testing this in your browser, be sure to replace a space with `%20` (as in `John Lin` to `John%20Lin`)
+5. (optional) Each method currently supports both GET and POST requests for ease of testing in a browser. However, this cannot be guaranteed in the future given the limitations of GET requests and we would recommend POST requests for future proofness.
+
 
 ## (Optional) Adding new basic needs
 

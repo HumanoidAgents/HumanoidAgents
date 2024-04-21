@@ -8,3 +8,4 @@ PyYAML>=6.0
 pandas>=2.0.2
 plotly>=5.15.0
 sentence-transformers>=2.2.2
+Flask-Caching>=2.1.0
