@@ -145,11 +145,12 @@ We recently discovered that there are certain use-cases that can benefit from re
 
 Then on your client side, do
 
-1. Visit http://127.0.0.1:5000/plan?curr_date=2023-01-03 at the start of each simulated day. This plans the day for each agent.
-2. Visit http://127.0.0.1:5000/log?curr_date=2023-01-03&specific_time=09:00 every 15 minutes, replace `09:00` with the time in `hh:mm` format.
-3. (optional) Under the hood, http://127.0.0.1:5000/log actually calls http://127.0.0.1:5000/activity and http://127.0.0.1:5000/conversations, which identifies the activity (at 15 minute interval) and the conversations between agents at each location.
-4. (optional) http://127.0.0.1:5000/activity and http://127.0.0.1:5000/plan can also be done for each agent individually. This can be done by visiting http://127.0.0.1:5000/activity_single and http://127.0.0.1:5000/plan_single respectively, with the additional argument of ```name=<agent_name>```. If you are testing this in your browser, be sure to replace a space with `%20` (as in `John Lin` to `John%20Lin`)
-5. (optional) Each method currently supports both GET and POST requests for ease of testing in a browser. However, this cannot be guaranteed in the future given the limitations of GET requests and we would recommend POST requests for future proofness.
+0. If you're starting a local server, `<BASE_URL>` should be `http://127.0.0.1:5000`
+1. Visit `<BASE_URL>/plan?curr_date=2023-01-03` at the start of each simulated day. This plans the day for each agent.
+2. Visit `<BASE_URL>/logs?curr_date=2023-01-03&specific_time=09:00` every 15 minutes, replace `09:00` with the time in `hh:mm` format.
+3. (optional) Under the hood, `<BASE_URL>/logs` actually calls `<BASE_URL>/activity` and `<BASE_URL>/conversations`, which identifies the activity (at 15 minute interval) and the conversations between agents at each location.
+4. (optional) `<BASE_URL>/activity` and `<BASE_URL>/plan` can also be done for each agent individually. This can be done by visiting <BASE_URL>/activity_single and <BASE_URL>/plan_single respectively, with the additional argument of ```name=<agent_name>```. If you are testing this in your browser, be sure to replace a space with `%20` (as in `John Lin` to `John%20Lin`)
+5. (optional) Each method currently supports both GET and POST requests for ease of testing in a browser. However, this cannot be guaranteed in the future given the limitations of GET requests and we would recommend POST requests (with data sent under the json param) for future proofness.
 
 
 ## (Optional) Adding new basic needs

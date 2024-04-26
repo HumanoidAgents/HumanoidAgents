@@ -3,20 +3,18 @@ import os
 import argparse
 from datetime import datetime
 import logging
-import requests
 import random
 from collections import defaultdict
-
-import yaml
-from tqdm import tqdm
+from urllib.parse import urljoin
 
 from humanoid_agent import HumanoidAgent
-
 from location import Location
-from utils import DatetimeNL, load_json_file, write_json_file, bucket_agents_by_location, get_pairwise_conversation_by_agents_in_same_location, override_agent_kwargs_with_condition, get_curr_time_to_daily_event
+from utils import DatetimeNL, load_json_file, write_json_file, bucket_agents_by_location, override_agent_kwargs_with_condition, get_curr_time_to_daily_event
 
-from flask import Flask, request
+import requests
+from flask import Flask, request, url_for, request
 from flask_caching import Cache
+
 
 # server side caching
 config = {
@@ -57,7 +55,7 @@ def chat_single_turn_with_possible_responses(n_responses=3):
         reaction = responder.get_agent_reaction_about_another_agent(initiator, curr_time, conversation_history=conversation_history)
         response = responder.speak_to_other_agent(initiator, curr_time, reaction=reaction, conversation_history=conversation_history)
         possible_responses.append(response)
-        
+
     return possible_responses
 
 #need variable number of messages thorugh POST + give users options + user defines what to use 
@@ -200,9 +198,10 @@ def plan():
     curr_time = datetime.fromisoformat(curr_date)
     # plan at the start of day
     plans = []
+
     for agent in agents:
         plan = requests.get(
-            url="http://127.0.0.1:5000/plan_single", 
+            url=urljoin(request.base_url, url_for("plan_single")), 
             params = {
                 "curr_date": curr_date,
                 "name": agent.name
@@ -253,7 +252,7 @@ def get_15m_activity():
     logging.info(curr_date + ' ' + specific_time)
     for agent in agents:
         overall_status = requests.get(
-            url="http://127.0.0.1:5000/activity_single", 
+            url=urljoin(request.base_url, url_for("get_15m_activity_single")), 
             params = {
                 "curr_date": curr_date,
                 "name": agent.name,
@@ -269,7 +268,7 @@ def get_15m_activity():
 
 @app.route('/conversations', methods=['POST', 'GET'])
 @cache.cached(query_string=True)
-def get_15m_conversation():
+def get_15m_conversations():
 
     data = parse_request(request, expected_keys=['curr_date', 'specific_time'])
 
@@ -280,7 +279,7 @@ def get_15m_conversation():
     curr_date = data['curr_date']
     specific_time = data['specific_time']
     list_of_agent_statuses = requests.get(
-        url="http://127.0.0.1:5000/activity", 
+        url=urljoin(request.base_url, url_for("get_15m_activity")), 
         params = {
             "curr_date": curr_date,
             "specific_time": specific_time
@@ -295,7 +294,7 @@ def get_15m_conversation():
             selected_agents = random.sample(agents, 2)
             initiator, responder = selected_agents
             convo_history = requests.get(
-                url="http://127.0.0.1:5000/chat", 
+                url=urljoin(request.base_url, url_for("chat")), 
                 params = {
                     "curr_date": curr_date,
                     "specific_time": specific_time,
@@ -307,7 +306,7 @@ def get_15m_conversation():
             location_to_conversations['-'.join(location)].append(convo_history)
     return location_to_conversations
 
-@app.route('/log', methods=['POST', 'GET'])
+@app.route('/logs', methods=['POST', 'GET'])
 def write_logs():
 
     data = parse_request(request, expected_keys=['curr_date', 'specific_time'])
@@ -319,14 +318,14 @@ def write_logs():
     curr_date = data['curr_date']
     specific_time = data['specific_time']
     list_of_agent_statuses = requests.get(
-        url="http://127.0.0.1:5000/activity", 
+        url=urljoin(request.base_url, url_for("get_15m_activity")), 
         params = {
             "curr_date": curr_date,
             "specific_time": specific_time
     }).json()
 
     location_to_conversations = requests.get(
-        url="http://127.0.0.1:5000/conversations", 
+        url=urljoin(request.base_url, url_for("get_15m_conversations")), 
         params = {
             "curr_date": curr_date,
             "specific_time": specific_time
@@ -366,14 +365,7 @@ if __name__ == '__main__':
     name_to_agent = {agent.name: agent for agent in agents}
     print("starting")
     app.run(debug=True)
-
-    # ## run simulation
-    # for curr_date in dates_of_interest:
-    #     plan(curr_date)
-    #     for specific_time in tqdm(specific_times_of_interest):
-    #         list_of_agent_statuses = get_15m_activity(curr_date, specific_time, agents, generative_location)
-    #         location_to_conversations = get_15m_conversation(curr_date, specific_time, list_of_agent_statuses, agents)
-    #         write_logs(curr_date, specific_time, list_of_agent_statuses, location_to_conversations)
+    
 
     
 
