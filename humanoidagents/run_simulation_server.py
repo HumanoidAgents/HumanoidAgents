@@ -32,6 +32,34 @@ cache = Cache(app)
 def index():
     return 'hi'
 
+@app.route('/chat_single_turn', methods=['POST', 'GET'])
+@cache.cached(query_string=True)
+def chat_single_turn_with_possible_responses(n_responses=3):
+    data = parse_request(request, expected_keys=['curr_date', 'specific_time', 'initiator_name', 'responder_name', 'conversation_history'])
+
+    # this is an error message
+    if isinstance(data, str):
+        return data
+
+    curr_date = data['curr_date']
+    specific_time = data['specific_time']
+    initiator_name = data['initiator_name']
+    responder_name = data['responder_name']
+    conversation_history = data['conversation_history']
+
+    curr_time = datetime.fromisoformat(f'{curr_date}T{specific_time}')
+
+    initiator = name_to_agent[initiator_name]
+    responder = name_to_agent[responder_name]
+
+    possible_responses = []
+    for i in range(n_responses):
+        reaction = responder.get_agent_reaction_about_another_agent(initiator, curr_time, conversation_history=conversation_history)
+        response = responder.speak_to_other_agent(initiator, curr_time, reaction=reaction, conversation_history=conversation_history)
+        possible_responses.append(response)
+        
+    return possible_responses
+
 #need variable number of messages thorugh POST + give users options + user defines what to use 
 @app.route('/chat', methods=['POST', 'GET'])
 @cache.cached(query_string=True)
@@ -104,20 +132,22 @@ def parse_request(request, expected_keys=['curr_date', 'specific_time']):
     key_to_format = {
         'curr_date': "yyyy-mm-dd",
         'specific_time': "hh:mm",
-        'name': "FirstName LastName"
+        'name': "FirstName LastName",
+        'conversation_history': 'list of { "name": name_self, "text": speak_self, "reaction": response_self}'
     }
 
     key_to_example = {
         'curr_date': "2023-01-03", 
         'specific_time': "09:00",
-        'name': "John Lin"
+        'name': "John Lin",
+        'conversation_history': '[{ "name": "John Lin", "text": "Hi there", "reaction": "Welcome Eddy back"}]'
     }
 
     key_to_options = {
         'name': list(name_to_agent.keys())
     }
     # automatically detect if data in GET or POST request form
-    app_data = request.args if request.args else request.form 
+    app_data = request.args if request.args else request.json
 
     # parameter validation
     useful_data = {}
