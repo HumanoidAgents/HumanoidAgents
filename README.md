@@ -70,8 +70,8 @@ Optional arguments
 4. ```--condition``` as noted in the paper, we can adjust the starting condition of all agents (in terms of their basic needs, emotion and closeness to others). You can use this to specify a condition (e.g. health) for all agents to be 0. See the list of accepted arguments on argparse
 
 5. ```--llm_provider```  refers to the Large Language Model provider you would to use. Choose between 
- - ```local``` (default) for a locally hosted LLM (such as Mistral 7B, Mixtral or any LlaMA models) and a local embedding model (such as sentence-transformers/all-MiniLM-L6-v2).  For ```local```, you would also need to start a OpenAI-compatible server. There are many ways to do this but we recommend [LM Studio](https://lmstudio.ai/), a no-code solution equipped with a GUI, as a first attempt to do this.
- - ```openai``` for ChatGPT-3.5-turbo for LLM (by default and configurable to other models) and Ada-v2 (by default and configurable to other models) for embedding respectively. Please note that the openai option charges to yout OpenAI account and you would need to set ```export OPENAI_API_KEY```
+ - ```local```  for a locally hosted LLM (such as Mistral 7B, Mixtral or any LlaMA models) and a local embedding model (such as sentence-transformers/all-MiniLM-L6-v2).  For ```local```, you would also need to start a OpenAI-compatible server. There are many ways to do this but we recommend [LM Studio](https://lmstudio.ai/), a no-code solution equipped with a GUI, as a first attempt to do this.
+ - ```openai``` (default) for ChatGPT-3.5-turbo for LLM (by default and configurable to other models) and Ada-v2 (by default and configurable to other models) for embedding respectively. Please note that the openai option charges to yout OpenAI account and you would need to set ```export OPENAI_API_KEY```
  - ```mindsdb``` for ChatGPT-3.5-turbo for LLM through MindsDB. Please note that since MindsDB does not come with embedding model support, this will use OpenAI for embedding directly and hence you would still need to set the ```export OPENAI_API_KEY=sk-...``` in addition to ```export MINDSDB_API_KEY=sk-...``` 
 
 6. ```--llm_model_name``` refers to LLM model name you would like to use.
@@ -88,7 +88,7 @@ Optional arguments
 
 - for ```--llm_provider=openai``` : please use any model compatible with the embeddings endpoint. We recommend starting with ```text-embedding-ada-002``` (default)
 
-- for ```--llm_provider=mindsdb```, please use the same options as ```--llm_provider=openai```, since Mindsdb does not have good embedding model support yet, these embedding are routed 
+- for ```--llm_provider=mindsdb```, please use the same options as ```--llm_provider=openai```, since MindsDB does not have good embedding model support yet, these embedding are routed to OpenAI directly.
 
 
 8. ```--daily_events_filename``` refers to major events affecting all agents in a simulation, to provide simulation based on customized settings of your preference. For an example of the expected structure, see ```daily_events/example.yaml``` 

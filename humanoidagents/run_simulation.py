@@ -22,7 +22,7 @@ parser.add_argument('-e', '--end_date', help='Enter end date (inclusive) by YYYY
 parser.add_argument("-c", "--condition", default=None, choices=["disgusted", "afraid", "sad", "surprised", "happy", "angry", "neutral", 
                                             "fullness", "social", "fun", "health", "energy", 
                                             "closeness_0", "closeness_5", "closeness_10", "closeness_15", None])
-parser.add_argument("-l", "--llm_provider", default="local", choices=["openai", "local", "mindsdb"])
+parser.add_argument("-l", "--llm_provider", default="openai", choices=["openai", "local", "mindsdb"])
 parser.add_argument("-lmn", "--llm_model_name", default="gpt-3.5-turbo")
 parser.add_argument("-emn", "--embedding_model_name", default="text-embedding-ada-002", help="with local, please use all-MiniLM-L6-v2 or another name compatible with SentenceTransformers")
 parser.add_argument("-daf", "--daily_events_filename", default=None)
