@@ -22,7 +22,9 @@ parser.add_argument('-e', '--end_date', help='Enter end date (inclusive) by YYYY
 parser.add_argument("-c", "--condition", default=None, choices=["disgusted", "afraid", "sad", "surprised", "happy", "angry", "neutral", 
                                             "fullness", "social", "fun", "health", "energy", 
                                             "closeness_0", "closeness_5", "closeness_10", "closeness_15", None])
-parser.add_argument("-l", "--llm", default="local", choices=["openai", "local", "mindsdb"])
+parser.add_argument("-l", "--llm_provider", default="local", choices=["openai", "local", "mindsdb"])
+parser.add_argument("-lmn", "--llm_model_name", default="gpt-3.5-turbo")
+parser.add_argument("-emn", "--embedding_model_name", default="text-embedding-ada-002", help="with local, please use all-MiniLM-L6-v2 or another name compatible with SentenceTransformers")
 parser.add_argument("-daf", "--daily_events_filename", default=None)
 
 
@@ -37,7 +39,9 @@ condition = args.condition
 start_date = args.start_date
 end_date = args.end_date
 default_agent_config_filename = args.default_agent_config_filename
-llm = args.llm
+llm_provider = args.llm_provider
+llm_model_name = args.llm_model_name
+embedding_model_name = args.embedding_model_name
 daily_events_filename = args.daily_events_filename
 
 
@@ -54,7 +58,10 @@ for agent_filename in agent_filenames:
     #inplace dict update
     agent_kwargs.update(default_agent_kwargs)
     agent_kwargs = override_agent_kwargs_with_condition(agent_kwargs, condition)
-    agent_kwargs["llm"] = llm
+    agent_kwargs["llm_provider"] = llm_provider
+    agent_kwargs["llm_model_name"] = llm_model_name
+    agent_kwargs["embedding_model_name"] = embedding_model_name
+    
     agent = HumanoidAgent(**agent_kwargs)
     agents.append(agent)
     

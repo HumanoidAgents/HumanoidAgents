@@ -10,15 +10,16 @@ from sentence_transformers import SentenceTransformer
 
 class OpenAILLM:
 
-    client = OpenAI()
-    model_name = "gpt-3.5-turbo"
+    def __init__(self, llm_model_name, embedding_model_name):
+        self.client = OpenAI()
+        self.llm_model_name = llm_model_name
+        self.embedding_model_name = embedding_model_name
 
-    @classmethod
-    def get_llm_response(cls, prompt, max_tokens=1024, timeout=60):
+    def get_llm_response(self, prompt, max_tokens=1024, timeout=60):
         n_retries = 10
         for i in range(n_retries):
             try:
-                chat_completion = cls.client.chat.completions.create(model=cls.model_name, messages=[{"role": "user", "content": prompt}], max_tokens=max_tokens, timeout=timeout)
+                chat_completion = self.client.chat.completions.create(model=self.llm_model_name, messages=[{"role": "user", "content": prompt}], max_tokens=max_tokens, timeout=timeout)
                 return chat_completion.choices[0].message.content
             except openai.APIError:
                 print("openai.error.ServiceUnavailableError")
@@ -42,31 +43,32 @@ class OpenAILLM:
 
         raise ValueError(f"OpenAI remains uncontactable after {n_retries} retries due to either Server Error or Timeout after {timeout} seconds")
 
-    @staticmethod
     @cache
-    def get_embeddings(query):
+    def get_embeddings(self, query):
         response = openai.embeddings.create(
             input=query,
-            model="text-embedding-ada-002"
+            model=self.embedding_model_name
         )
         embeddings = response.data[0].embedding
         return embeddings
 
 class LocalLLM(OpenAILLM):
-    
-    client = OpenAI(base_url="http://localhost:1234/v1", api_key="not-needed")
 
-    embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+    def __init__(self, llm_model_name, embedding_model_name):
+        self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="not-needed")
+        self.llm_model_name = llm_model_name
+        self.embedding_model_name = embedding_model_name
+        self.embedding_model = SentenceTransformer(self.embedding_model_name)
 
-    @classmethod
     @cache
-    def get_embeddings(cls, query):
-        response = cls.embedding_model.encode([query], convert_to_numpy=True, show_progress_bar=False)
+    def get_embeddings(self, query):
+        response = self.embedding_model.encode([query], convert_to_numpy=True, show_progress_bar=False)
         embeddings = list(response[0])
         return embeddings
 
 class MindsDBLLM(OpenAILLM):
-    # please note that this still calls embedding service from openai since MindsDB doesn't support embedding service
     
-    client = OpenAI(base_url="https://llm.mdb.ai", api_key=os.getenv("MINDSDB_API_KEY"))
-    model_name = "gpt-3.5-turbo" # this can be anything allowed by https://docs.mdb.ai/docs/api/models such as "mixtral-8x7b" or "gemini-1.5-pro"; setting to "gpt-3.5-turbo" as default
+    def __init__(self, llm_model_name, embedding_model_name):
+        self.client = OpenAI(base_url="https://llm.mdb.ai", api_key=os.getenv("MINDSDB_API_KEY"))
+        self.llm_model_name = llm_model_name
+        self.embedding_model_name = embedding_model_name

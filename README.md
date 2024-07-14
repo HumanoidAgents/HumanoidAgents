@@ -51,7 +51,7 @@ Windows users: avoid using "\\" in command
 
 Prerequisites
 
-1. ```export OPENAI_API_KEY=sk-...``` to use your OpenAI Key if you would like to use OpenAI LLM; otherwise please select ```--llm local``` to run local inferencing models instead and ```export MINDSDB_API_KEY=sk-...``` to use gpt-3.5-turbo through MindsDB instead. Please be careful not to exceed your quota since every simulated day with 2 to 3 agents cost around $2-5 and takes 45-60 minutes given the number of API calls. For **Windows** users, this should be ```set OPENAI_API_KEY=sk-...```
+1. ```export OPENAI_API_KEY=sk-...``` to use your OpenAI Key if you would like to use OpenAI LLM; otherwise please select ```--llm_provider local``` to run local inferencing models instead and ```export MINDSDB_API_KEY=sk-...``` to use gpt-3.5-turbo through MindsDB instead. Please be careful not to exceed your quota since every simulated day with 2 to 3 agents cost around $2-5 and takes 45-60 minutes given the number of API calls. For **Windows** users, this should be ```set OPENAI_API_KEY=sk-...```
 
 Required arguments
 
@@ -69,12 +69,29 @@ Optional arguments
    
 4. ```--condition``` as noted in the paper, we can adjust the starting condition of all agents (in terms of their basic needs, emotion and closeness to others). You can use this to specify a condition (e.g. health) for all agents to be 0. See the list of accepted arguments on argparse
 
-5. ```--llm```  refers to the Large Language Model you would to use. Choose between 
+5. ```--llm_provider```  refers to the Large Language Model provider you would to use. Choose between 
  - ```local``` (default) for a locally hosted LLM (such as Mistral 7B, Mixtral or any LlaMA models) and a local embedding model (such as sentence-transformers/all-MiniLM-L6-v2).  For ```local```, you would also need to start a OpenAI-compatible server. There are many ways to do this but we recommend [LM Studio](https://lmstudio.ai/), a no-code solution equipped with a GUI, as a first attempt to do this.
-- ```openai``` for ChatGPT-3.5-turbo for LLM and Ada-v2 for embedding respectively. Please note that the openai option charges to yout OpenAI account and you would need to set ```export OPENAI_API_KEY```
- - ```mindsdb``` for ChatGPT-3.5-turbo for LLM through MindsDB. Please note that since MindsDB does not come with embedding model support, this will use OpenAI Ada-v2 for embedding directly and hence you would still need to set the ```export OPENAI_API_KEY=sk-...``` in addition to ```export MINDSDB_API_KEY=sk-...``` 
+ - ```openai``` for ChatGPT-3.5-turbo for LLM (by default and configurable to other models) and Ada-v2 (by default and configurable to other models) for embedding respectively. Please note that the openai option charges to yout OpenAI account and you would need to set ```export OPENAI_API_KEY```
+ - ```mindsdb``` for ChatGPT-3.5-turbo for LLM through MindsDB. Please note that since MindsDB does not come with embedding model support, this will use OpenAI for embedding directly and hence you would still need to set the ```export OPENAI_API_KEY=sk-...``` in addition to ```export MINDSDB_API_KEY=sk-...``` 
 
-6. ```--daily_events_filename``` refers to major events affecting all agents in a simulation, to provide simulation based on customized settings of your preference. For an example of the expected structure, see ```daily_events/example.yaml``` 
+6. ```--llm_model_name``` refers to LLM model name you would like to use.
+
+- for ```--llm_provider=local```: this field does not influence the model being served but feel free to note down the name of model for record-keeping/later analysis
+
+- for ```--llm_provider=openai```: this can any model that's compatible with the chat_completion endpoint (more at https://platform.openai.com/docs/models) - we recommend starting with  ```gpt-3.5-turbo``` (default) or ```gpt-4o```
+
+- for ```--llm_provider=mindsdb```, this can be any model from https://docs.mdb.ai/docs/models - we recommend starting with  ```gpt-3.5-turbo``` (default)
+
+7. ```--embedding_model_name``` refers to Embedding model name you would like to use.
+
+- for ```--llm_provider=local```: please use any model compatible with SentenceTransformers. We recommend starting with ```all-MiniLM-L6-v2```
+
+- for ```--llm_provider=openai``` : please use any model compatible with the embeddings endpoint. We recommend starting with ```text-embedding-ada-002``` (default)
+
+- for ```--llm_provider=mindsdb```, please use the same options as ```--llm_provider=openai```, since Mindsdb does not have good embedding model support yet, these embedding are routed 
+
+
+8. ```--daily_events_filename``` refers to major events affecting all agents in a simulation, to provide simulation based on customized settings of your preference. For an example of the expected structure, see ```daily_events/example.yaml``` 
 
 ## Customizing locations and specific agents
 

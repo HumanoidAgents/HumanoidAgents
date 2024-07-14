@@ -91,7 +91,9 @@ def initialize(args):
     start_date = args.start_date
     end_date = args.end_date
     default_agent_config_filename = args.default_agent_config_filename
-    llm = args.llm
+    llm_provider = args.llm_provider
+    llm_model_name = args.llm_model_name
+    embedding_model_name = args.embedding_model_name
     daily_events_filename = args.daily_events_filename
 
     ## location
@@ -107,7 +109,9 @@ def initialize(args):
         #inplace dict update
         agent_kwargs.update(default_agent_kwargs)
         agent_kwargs = override_agent_kwargs_with_condition(agent_kwargs, condition)
-        agent_kwargs["llm"] = llm
+        agent_kwargs["llm_provider"] = llm_provider
+        agent_kwargs["llm_model_name"] = llm_model_name
+        agent_kwargs["embedding_model_name"] = embedding_model_name
         agent = HumanoidAgent(**agent_kwargs)
         agents.append(agent)
 
@@ -187,7 +191,6 @@ def plan_single():
 
 @app.route('/plan', methods=['POST', 'GET'])
 def plan():
-
     data = parse_request(request, expected_keys=['curr_date'])
     
     # this is an error message
@@ -195,10 +198,7 @@ def plan():
         return data
     curr_date = data['curr_date']
 
-    curr_time = datetime.fromisoformat(curr_date)
-    # plan at the start of day
     plans = []
-
     for agent in agents:
         plan = requests.get(
             url=urljoin(request.base_url, url_for("plan_single")), 
@@ -206,8 +206,6 @@ def plan():
                 "curr_date": curr_date,
                 "name": agent.name
         }).text
-        # condition = curr_time_to_daily_event[curr_time] if curr_time in curr_time_to_daily_event else None
-        # plan = agent.plan(curr_time=curr_time, condition=condition)
         plans.append(plan)
     return plans
 
@@ -355,7 +353,9 @@ if __name__ == '__main__':
     parser.add_argument("-c", "--condition", default=None, choices=["disgusted", "afraid", "sad", "surprised", "happy", "angry", "neutral", 
                                             "fullness", "social", "fun", "health", "energy", 
                                             "closeness_0", "closeness_5", "closeness_10", "closeness_15", None])
-    parser.add_argument("-l", "--llm", default="local", choices=["openai", "local", "mindsdb"])
+    parser.add_argument("-l", "--llm_provider", default="local", choices=["openai", "local", "mindsdb"])
+    parser.add_argument("-lmn", "--llm_model_name", default="gpt-3.5-turbo")
+    parser.add_argument("-emn", "--embedding_model_name", default="text-embedding-ada-002", help="with local, please use all-MiniLM-L6-v2 or another name compatible with SentenceTransformers")
     parser.add_argument("-daf", "--daily_events_filename", default=None)
 
 

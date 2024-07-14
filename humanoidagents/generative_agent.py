@@ -11,7 +11,7 @@ from humanoidagents.utils import DatetimeNL
 
 class GenerativeAgent:
 
-    def __init__(self, name: str, description: str, age: int, traits: list, example_day_plan: str, llm: str='openai'):
+    def __init__(self, name: str, description: str, age: int, traits: list, example_day_plan: str, llm_provider: str, llm_model_name: str, embedding_model_name: str):
         self.name = name
         self.description = description
         self.age = age
@@ -33,12 +33,12 @@ class GenerativeAgent:
             )
         
         self.add_to_memory(activity=self.example_day_plan, curr_time=global_start_date, memory_type="day_plan")
-        if llm == "openai":
-            self.LLM = OpenAILLM
-        elif llm == "mindsdb":
-            self.LLM = MindsDBLLM
+        if llm_provider == "openai":
+            self.LLM = OpenAILLM(llm_model_name=llm_model_name, embedding_model_name=embedding_model_name)
+        elif llm_provider == "mindsdb":
+            self.LLM = MindsDBLLM(llm_model_name=llm_model_name, embedding_model_name=embedding_model_name)
         else:
-            self.LLM = LocalLLM
+            self.LLM = LocalLLM(llm_model_name=llm_model_name, embedding_model_name=embedding_model_name)
 
     @cache
     def plan(self, curr_time, condition=None):

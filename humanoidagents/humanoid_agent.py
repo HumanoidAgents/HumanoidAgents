@@ -10,8 +10,8 @@ from humanoidagents.utils import DatetimeNL
 
 class HumanoidAgent(GenerativeAgent):
 
-    def __init__(self, name: str, description: str, age: int, traits: list, example_day_plan: str, social_relationships={}, basic_needs=None, emotion=None, llm=None):
-        super().__init__(name, description, age, traits, example_day_plan, llm=llm)
+    def __init__(self, name: str, description: str, age: int, traits: list, example_day_plan: str, social_relationships={}, basic_needs=None, emotion=None, llm_provider=None, llm_model_name=None, embedding_model_name=None):
+        super().__init__(name, description, age, traits, example_day_plan, llm_provider=llm_provider, llm_model_name=llm_model_name, embedding_model_name=embedding_model_name)
 
         self.allow_emotion_changes = True if emotion is None else False
 
