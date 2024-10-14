@@ -174,7 +174,7 @@ Then on your client side, do
 
 You might also be interested to add/remove further basic needs to agents other than the five we have as a default (fullness, social, health, fun and energy)
 
-To do that, you can create your own default_agent_config.json file.
+To do that, you can create your own `default_agent_config.json` file.
 
 Each basic need requires the following format in order for the code to support them.
 
